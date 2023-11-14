@@ -1,16 +1,6 @@
-# webpack-must-have
+# Web React Template
 
 Webpack version: 5+
-
-## What is new in Webpack 5
-
-- Faster builds with persistent caching
-- Smaller bundle sizes (better tree-shaking)
-- Better long term caching
-
-### If you need Webpack4 take a look branch [webpack_v4](https://github.com/Yegorich555/WebpackMustHave/tree/webpack_v4)
-
-### Intro into Webpack you can watch on youtube (russian only): [webpack-intro](https://www.youtube.com/watch?v=Ds0l__XMbIo&ab_channel=yahik)
 
 ## How to run project
 
@@ -20,14 +10,6 @@ Webpack version: 5+
    - `npm run build-prod` - building production version (minimized and optimized). The project will be builded into `build` folder. You can change destination in `webpack.common.js (line 19)`
    - `npm run build-dev` - building development version
    - `npm run serve` - building development hot-reloaded version with webpack-dev-server
-
-## How to re-use project
-
-1. In the header of this repo located button  `Use this template 📗` (in top-right corner). Click on the button and select **Create a new repository**
-2. Clone created repository to local disk and in console add branches from template repo
-  - `git remote add template https://github.com/Yegorich555/webpack-must-have`
-  - `git fetch --all`
-3. Great. Now you have repo tied with template-repo :)
 
 ## Recommended VSCode extensions
 
@@ -56,11 +38,6 @@ Webpack version: 5+
 
 - [web-ui-pack](https://www.npmjs.com/package/web-ui-pack) - nice package with form-controls, smart-popup, spinner etc. & useful helpers
 - [ytech-js-extensions](https://www.npmjs.com/package/ytech-js-extensions) - very common extensions for Arrays, Dates (that lacks in web-ui-pack)
-
-## TODO
-
-- Add icomoon to fonts
-- Path autocomplete doesn't read path-alias-config from tsconfig.json
 
 ## Troubleshooting
 
