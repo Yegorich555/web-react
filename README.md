@@ -21,6 +21,14 @@ Webpack version: 5+
    - `npm run build-dev` - building development version
    - `npm run serve` - building development hot-reloaded version with webpack-dev-server
 
+## How to re-use project
+
+1. In the header of this repo located button  `Use this template 📗` (in top-right corner). Click on the button and select **Create a new repository**
+2. Clone created repository to local disk and in console add branches from template repo
+  - `git remote add template https://github.com/Yegorich555/webpack-must-have`
+  - `git fetch --all`
+3. Great. Now you have repo tied with template-repo :)
+
 ## Recommended VSCode extensions
 
 - CSS Modules: <https://marketplace.visualstudio.com/items?itemName=clinyong.vscode-css-modules>
