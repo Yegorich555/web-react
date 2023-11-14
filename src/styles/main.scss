@@ -1,0 +1,29 @@
+@import "normalize.css";
+@import "sanitize.css";
+@import "fontface.css";
+
+:root {
+  --base-margin: 1.6rem;
+}
+
+body {
+  color: $basicColor;
+  // prettier-ignore
+  font: 14px "OpenSans-Regular", sans-serif;
+  min-height: 100vh;
+  background: top / contain url(images/background.svg) no-repeat;
+}
+
+h1 {
+  font-size: 2.2em;
+  text-align: center;
+}
+
+h2 {
+  font-size: 2em;
+}
+
+::placeholder {
+  /* test for autoprefixer in postcss */
+  color: antiquewhite;
+}
