@@ -5,7 +5,7 @@ export default function TheHeader() {
   return (
     <h1 className={styles.header}>
       <img src={imgLogo} alt="logo" />
-      Webpack Must Have
+      Web React
     </h1>
   );
 }
