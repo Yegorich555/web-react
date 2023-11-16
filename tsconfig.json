@@ -23,5 +23,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
+  "files": ["src/main.tsx"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "build", ".vscode"]
 }

@@ -50,7 +50,7 @@ module.exports = (env, argv) => {
         webpackMockServer.use(devServer.app, {
           entry: [],
           tsConfigFileName: "tsconfig.mock.json",
-          before: (req, res, next) => {
+          before: (req, _res, next) => {
             console.log(`Got request: ${req.method} ${req.url}`);
             // res.once("finish", () => {
             //   console.log(`Sent response: ${req.method} ${req.url}`);
