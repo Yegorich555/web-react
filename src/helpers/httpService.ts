@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-param-reassign */
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosResponseTransformer, CancelTokenSource } from "axios";
+import tryParseJSONDate from "ytech-js-extensions/lib/object/tryParseJSONDate";
 
 // export interface IDownloadFile {
 //   id?: number;
@@ -17,8 +18,7 @@ export interface HttpRequestConfig extends AxiosRequestConfig {
 // axios.defaults.baseURL = "https://api.example.com";
 (axios.defaults.transformResponse as AxiosResponseTransformer[]).push((data, headers) => {
   if ((headers["content-type"] as string)?.includes("json")) {
-    // todo add it from ytech-js-extensions
-    // return tryParseJSONDate(data);
+    return tryParseJSONDate(data);
   }
   return data;
 });
@@ -73,7 +73,7 @@ const http = {
     allTokens.forEach((x) => x.cancel());
   },
 
-  /** Ordinary get request */
+  /** Get request */
   get: <T>(url: string, config?: HttpRequestConfig) => errorHandler(() => axios.get<T>(url, config), config),
 
   /** Get/post request based on arg [data] + cancel previous if it's not finished */
