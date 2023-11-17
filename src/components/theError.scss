@@ -1,0 +1,44 @@
+.theError {
+  position: fixed;
+  z-index: 90001;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  white-space: pre-line;
+  padding: 0.75rem 1.25rem;
+  color: #fce3e5;
+  background-color: #ee4e4e;
+  gap: 1rem;
+  animation: theError var(--anim-t);
+
+  @keyframes theError {
+    // prettier-ignore
+    0% { transform: scale(1); }
+    // prettier-ignore
+    50% { transform: scale(1.4); }
+    // prettier-ignore
+    60% { transform: scale(1.1); }
+    // prettier-ignore
+    70% { transform: scale(1.2); }
+    // prettier-ignore
+    80% { transform: scale(1); }
+    // prettier-ignore
+    90% { transform: scale(1.1); }
+    // prettier-ignore
+    100% { transform: scale(1); }
+  }
+
+  &.closing {
+    transition: all var(--anim-t) ease-in-out;
+    top: -50%;
+  }
+
+  > button {
+    --icon-img: var(--wup-icon-cross);
+    --icon: #fff;
+    --icon-size: 1em;
+  }
+}

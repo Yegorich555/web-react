@@ -173,10 +173,10 @@ module.exports = function (env, argv) {
               options: {
                 modules: {
                   /** @type {boolean | RegExp | (r:string)=> boolean} */
-                  auto: (resPath) => {
+                  auto: (src) => {
                     // every style-file is css-module by default except folder src/styles/**/*
                     const srcStyles = path.resolve("src", "styles");
-                    return !resPath.startsWith(srcStyles);
+                    return !src.startsWith(srcStyles) || src.includes(".m.");
                   },
                   getLocalIdent: isDevMode
                     ? (() => {

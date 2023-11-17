@@ -30,7 +30,7 @@ module.exports = {
   plugins: ["json", "prettier", "import", "@typescript-eslint", "unused-imports", "css-modules"],
   rules: {
     "css-modules/no-unused-class": "warn",
-    "css-modules/no-undef-class": "error",
+    "css-modules/no-undef-class": ["error"],
     // TS
     "@typescript-eslint/no-explicit-any": [
       "error",
