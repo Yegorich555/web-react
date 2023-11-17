@@ -1,6 +1,7 @@
 import "./styles/main.scss";
 import "ytech-js-extensions/lib/date"; // extend default Date type
 import "ytech-js-extensions/lib/array"; // extend default Array type
+import "./helpers/classNames";
 
 import { Component, ErrorInfo } from "react";
 import ReactDOM from "react-dom/client";

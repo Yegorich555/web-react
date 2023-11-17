@@ -217,8 +217,6 @@ module.exports = function (env, argv) {
           BASE_URL: '"/"',
         },
         "global.DEV": JSON.stringify(isDevMode),
-        "global.DEBUG": JSON.stringify(false),
-        "global.VERBOSE": JSON.stringify(false),
       }),
       new CaseSensitivePathsPlugin(), // it fixes bugs between OS in caseSensitivePaths (since Windows isn't CaseSensitive but Linux is)
       new HtmlWebpackPlugin({
