@@ -1,7 +1,7 @@
 import { WUPPasswordControl } from "web-ui-pack";
 import BaseControl, { BaseControlProps } from "./baseControl";
 //
-import styles from "./text.m.scss";
+// import styles from "./text.m.scss";
 
 WUPPasswordControl.$use(); // register control in the browser
 // set defaults
@@ -33,6 +33,12 @@ export default class PasswordControl extends BaseControl<WUPPasswordControl, Pro
   }
 
   goRender(props: Record<string, unknown>): React.ReactElement {
-    return <wup-pwd {...props} class={`${styles.ctrl} ${this.props.className ?? ""}`.trimEnd()} />;
+    return (
+      <wup-pwd
+        {...props}
+        // class={`${styles.ctrl} ${this.props.className ?? ""}`.trimEnd()}
+        class={this.props.className}
+      />
+    );
   }
 }

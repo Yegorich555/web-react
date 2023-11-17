@@ -1,7 +1,7 @@
 import { WUPTextControl } from "web-ui-pack";
 import BaseControl, { BaseControlProps } from "./baseControl";
 //
-import styles from "./text.m.scss";
+// import styles from "./text.scss";
 
 WUPTextControl.$use(); // register control in the browser
 // set defaults
@@ -15,6 +15,12 @@ interface Props extends Partial<Omit<WUP.Text.Options, "validationRules">>, Base
 
 export default class TextControl extends BaseControl<WUPTextControl, Props> {
   goRender(props: Record<string, unknown>): React.ReactElement {
-    return <wup-text {...props} class={`${styles.ctrl} ${this.props.className ?? ""}`.trimEnd()} />;
+    return (
+      <wup-text
+        {...props}
+        // class={`${styles.ctrl} ${this.props.className ?? ""}`.trimEnd()}
+        class={this.props.className}
+      />
+    );
   }
 }

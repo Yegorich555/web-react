@@ -1,5 +1,5 @@
 import { WUPFormElement } from "web-ui-pack";
-import styles from "./form.scss";
+// import styles from "./form.scss";
 
 WUPFormElement.$use(); // register control in the browser
 // set defaults
@@ -45,7 +45,8 @@ export default class Form extends React.Component<Props> {
   render(): React.ReactNode {
     return (
       <wup-form
-        class={`${styles.form} ${this.props.className ?? ""}`.trimEnd()}
+        // class={`${styles.form} ${this.props.className ?? ""}`.trimEnd()}
+        class={this.props.className} // extend defaults in mains.css
         ref={(el) => {
           this.domEl = el || this.domEl || ({} as unknown);
         }}
