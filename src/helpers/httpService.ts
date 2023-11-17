@@ -10,8 +10,8 @@ import tryParseJSONDate from "ytech-js-extensions/lib/object/tryParseJSONDate";
 // }
 
 export interface HttpRequestConfig extends AxiosRequestConfig {
+  /** Set true so disable default error handler and catch exception manually via .catch */
   disableCatchErr?: boolean;
-  cancelTokenKey?: string;
 }
 
 // configure defaults: https://axios-http.com/docs/config_defaults
@@ -24,77 +24,89 @@ export interface HttpRequestConfig extends AxiosRequestConfig {
 });
 axios.defaults.headers["Content-Type"] = "application/json";
 
-function errorHandler<T>(fn: () => Promise<T>, config?: HttpRequestConfig) {
-  return fn().catch((err: Error & { response: AxiosResponse | null; isHandled: boolean }) => {
+function errorHandler<T>(req: Promise<T>, cfg?: HttpRequestConfig) {
+  if (cfg?.disableCatchErr) {
+    return req;
+  }
+  return req.catch((err: Error & { response: AxiosResponse | null; _isHandled: boolean }) => {
     let msg = "";
-    if (!config?.disableCatchErr) {
-      if (err.response) {
-        const res = err.response as AxiosResponse;
-        if (res.data?.errorMessage) {
-          // expected message from backend
-          msg = res.data.errorMessage;
-        } else {
-          msg = err.message;
-          if (res.config.url) {
-            msg += ` in ${res.config.method?.toUpperCase()} ${res.config.url}`;
-          }
+    if (err.response) {
+      const res = err.response as AxiosResponse;
+      if (res.data?.errorMessage) {
+        // expected message from backend
+        msg = res.data.errorMessage;
+      } else {
+        msg = err.message;
+        if (res.config.url) {
+          msg += ` in ${res.config.method?.toUpperCase()} ${res.config.url}`;
         }
       }
-      if (!msg) {
-        msg = err.message;
-      }
-      err.isHandled = true;
-      // todo wrap it in proper way
-      if (msg !== "Operation canceled by the user.") http.onError(msg);
     }
+    if (!msg) {
+      msg = err.message;
+    }
+    err._isHandled = true;
+    // todo wrap it in proper way
+    if (msg !== "Operation canceled by the user.") http.onError(msg);
+
     throw err;
   });
 }
 
 // handling of cancellation token
-const cancelMap = new Map<string, CancelTokenSource>();
-function cancelPrevious(url: string) {
-  const prevToken = cancelMap.get(url);
-  if (prevToken) {
-    prevToken.cancel();
-    prevToken && cancelMap.delete(url);
-  }
+const cancelMap = new Map<string, CancelTokenSource>(); // todo memory leak here: need to clear when request finished
 
-  const srcToken = axios.CancelToken.source();
-  cancelMap.set(url, srcToken);
-  return srcToken.token;
-}
-
-/** Ordinary httpServer as wrapper of Axios */
+/** Ordinary httpClient as wrapper of Axios */
 const http = {
   /** Immediately cancel all started requests */
   cancelAll: () => {
     const allTokens = Array.from(cancelMap.values());
     allTokens.forEach((x) => x.cancel());
   },
+  /** Find request by token & cancel it */
+  cancel: (cancelToken: string) => {
+    const p = cancelMap.get(cancelToken);
+    if (p) {
+      p.cancel();
+      p && cancelMap.delete(cancelToken);
+    }
+  },
+  /** Find request by token & cancel it & create new token for next request */
+  cancelPrev: (cancelToken: string) => {
+    http.cancel(cancelToken);
+
+    const st = axios.CancelToken.source();
+    cancelMap.set(cancelToken, st);
+    return st.token;
+  },
 
   /** Get request */
-  get: <T>(url: string, config?: HttpRequestConfig) => errorHandler(() => axios.get<T>(url, config), config),
+  get: <T>(url: string, config?: HttpRequestConfig) => errorHandler(axios.get<T>(url, config), config),
 
   /** Get/post request based on arg [data] + cancel previous if it's not finished */
-  search: <T>(url: string, data?: unknown, config?: HttpRequestConfig, extraCancelParam?: string) => {
+  search: <T>(url: string, data?: unknown, cfg?: HttpRequestConfig) => {
     const method = data != null ? "post" : "get";
-    config ??= {};
-    config.cancelToken = cancelPrevious(`search${url}_${config.cancelTokenKey || ""}_${extraCancelParam || ""}`);
-    return errorHandler(() => axios[method]<T>(url, data, config), config);
+    cfg = {
+      ...cfg,
+      cancelToken: cfg?.cancelToken ?? http.cancelPrev(`_search${url}`),
+    };
+    return errorHandler(axios[method]<T>(url, data, cfg), cfg);
   },
 
   /** Add new data/change security info */
-  post: <T>(url: string, data?: unknown, config?: HttpRequestConfig) => errorHandler(() => axios.post<T>(url, data, config), config),
+  post: <T>(url: string, data?: unknown, cfg?: HttpRequestConfig) => errorHandler(axios.post<T>(url, data, cfg), cfg),
 
   /** Update existed data and cancel previous if it's not finished */
-  put: <T>(url: string, data?: unknown, config?: HttpRequestConfig) => {
-    const cancelToken = cancelPrevious(`put${url}_${config?.cancelTokenKey || ""}`);
-    return errorHandler(() => axios.put<T>(url, data, { ...config, cancelToken }), config);
+  put: <T>(url: string, data?: unknown, cfg?: HttpRequestConfig) => {
+    cfg = {
+      ...cfg,
+      cancelToken: cfg?.cancelToken ?? http.cancelPrev(`_put${url}`),
+    };
+    return errorHandler(axios.put<T>(url, data, cfg), cfg);
   },
 
   /** Delete request */
-  delete: <T>(url: string, config?: HttpRequestConfig) => errorHandler(() => axios.delete<T>(url, config), config),
+  delete: <T>(url: string, cfg?: HttpRequestConfig) => errorHandler(axios.delete<T>(url, cfg), cfg),
 
   // todo re-use it in global handler
   onError: (errorMsg: string) => {
@@ -102,9 +114,9 @@ const http = {
   },
 
   /** Download file with pointed URL; WARN: point newFileName without file-extension */
-  download: (url: string, newFileName?: string, preventSaveAs?: boolean, config?: HttpRequestConfig) => {
-    const cfg: HttpRequestConfig = {
-      ...config,
+  download: (url: string, newFileName?: string, preventSaveAs?: boolean, cfg?: HttpRequestConfig) => {
+    cfg = {
+      ...cfg,
       responseType: "blob", // 'blob' is important for properly converting by axios
       withCredentials: false,
     };
@@ -119,7 +131,7 @@ const http = {
         }
 
         const blob = new Blob([res.data], { type: res.headers["content-type"] });
-        if (!preventSaveAs) http.saveAs(blob, fileName);
+        !preventSaveAs && http.saveAs(blob, fileName);
         return blob;
       });
     } catch {
