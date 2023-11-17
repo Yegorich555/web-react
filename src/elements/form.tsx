@@ -1,5 +1,5 @@
 import { WUPFormElement } from "web-ui-pack";
-import styles from "./form.m.scss";
+import styles from "./form.scss";
 
 WUPFormElement.$use(); // register control in the browser
 // set defaults
