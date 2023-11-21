@@ -12,3 +12,8 @@ export async function apiLogin(m: ILoginModel): Promise<IBaseUser> {
   const res = await http.post<IBaseUser>(api.accSignIn, m);
   return res.data;
 }
+
+// apiLogin({ email: "eml", password: "dfd", rememberMe: false });
+
+// todo test download
+// todo test cancelling

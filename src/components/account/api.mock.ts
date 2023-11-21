@@ -13,4 +13,9 @@ const mockUser: IBaseUser = {
 
 export default webpackMockServer.add((app) => {
   app.get(api.accCurrent, (_, res) => res.json(mockUser));
+  app.post(api.accSignIn, (_, res) => {
+    // res.status(401).send("Test message");
+    // console.warn(req.body);
+    res.json(mockUser);
+  });
 });

@@ -1,196 +1,146 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-param-reassign */
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosResponseTransformer, CancelTokenSource } from "axios";
 import tryParseJSONDate from "ytech-js-extensions/lib/object/tryParseJSONDate";
 
-// export interface IDownloadFile {
-//   id?: number;
-//   url: string;
-//   fileName: string;
-// }
-
-export interface HttpRequestConfig extends AxiosRequestConfig {
-  /** Set true so disable default error handler and catch exception manually via .catch */
-  disableCatchErr?: boolean;
+interface HttpResponse<T> extends Response {
+  data: T;
 }
+interface HttpReqInit extends RequestInit {
+  headers?: Record<string, string>;
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type HttpReqData = BodyInit | Record<string, any>;
 
-// configure defaults: https://axios-http.com/docs/config_defaults
-// axios.defaults.baseURL = "https://api.example.com";
-(axios.defaults.transformResponse as AxiosResponseTransformer[]).push((data, headers) => {
-  if ((headers["content-type"] as string)?.includes("json")) {
-    return tryParseJSONDate(data);
-  }
-  return data;
-});
-axios.defaults.headers["Content-Type"] = "application/json";
+/** Wrapper of browser-fetch: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch */
+export class HttpClient {
+  static defaults: HttpReqInit = {
+    credentials: "same-origin",
+    headers: {
+      "content-type": "application/json",
+    },
+  };
 
-function errorHandler<T>(req: Promise<T>, cfg?: HttpRequestConfig) {
-  if (cfg?.disableCatchErr) {
-    return req;
+  /** Returns whether it if ordinary object or another one */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected isPlainObject(obj: any) {
+    return typeof obj === "object" && ![ReadableStream, Blob, ArrayBuffer, FormData, URLSearchParams].some((t) => obj instanceof t);
   }
-  return req.catch((err: Error & { response: AxiosResponse | null; _isHandled: boolean }) => {
-    let msg = "";
-    if (err.response) {
-      const res = err.response as AxiosResponse;
-      if (res.data?.errorMessage) {
-        // expected message from backend
-        msg = res.data.errorMessage;
-      } else {
-        msg = err.message;
-        if (res.config.url) {
-          msg += ` in ${res.config.method?.toUpperCase()} ${res.config.url}`;
-        }
+
+  protected async fetch<T>(
+    method: "GET" | "PUT" | "POST" | "DELETE",
+    url: string | RequestInfo,
+    data: unknown,
+    cfg: HttpReqInit | undefined,
+  ): Promise<HttpResponse<T>> {
+    // cast to JSON string if possible
+    if (data && (!cfg?.headers || !cfg.headers["content-type"])) {
+      if (this.isPlainObject(data)) {
+        cfg ??= {};
+        cfg.body = JSON.stringify(data);
       }
     }
-    if (!msg) {
-      msg = err.message;
-    }
-    err._isHandled = true;
-    // todo wrap it in proper way
-    if (msg !== "Operation canceled by the user.") http.onError(msg);
 
-    throw err;
-  });
-}
-
-// handling of cancellation token
-const cancelMap = new Map<string, CancelTokenSource>(); // todo memory leak here: need to clear when request finished
-
-/** Ordinary httpClient as wrapper of Axios */
-const http = {
-  /** Immediately cancel all started requests */
-  cancelAll: () => {
-    const allTokens = Array.from(cancelMap.values());
-    allTokens.forEach((x) => x.cancel());
-  },
-  /** Find request by token & cancel it */
-  cancel: (cancelToken: string) => {
-    const p = cancelMap.get(cancelToken);
-    if (p) {
-      p.cancel();
-      p && cancelMap.delete(cancelToken);
-    }
-  },
-  /** Find request by token & cancel it & create new token for next request */
-  cancelPrev: (cancelToken: string) => {
-    http.cancel(cancelToken);
-
-    const st = axios.CancelToken.source();
-    cancelMap.set(cancelToken, st);
-    return st.token;
-  },
-
-  /** Get request */
-  get: <T>(url: string, config?: HttpRequestConfig) => errorHandler(axios.get<T>(url, config), config),
-
-  /** Get/post request based on arg [data] + cancel previous if it's not finished */
-  search: <T>(url: string, data?: unknown, cfg?: HttpRequestConfig) => {
-    const method = data != null ? "post" : "get";
+    // eslint-disable-next-line no-param-reassign
     cfg = {
+      ...HttpClient.defaults,
+      method,
       ...cfg,
-      cancelToken: cfg?.cancelToken ?? http.cancelPrev(`_search${url}`),
-    };
-    return errorHandler(axios[method]<T>(url, data, cfg), cfg);
-  },
-
-  /** Add new data/change security info */
-  post: <T>(url: string, data?: unknown, cfg?: HttpRequestConfig) => errorHandler(axios.post<T>(url, data, cfg), cfg),
-
-  /** Update existed data and cancel previous if it's not finished */
-  put: <T>(url: string, data?: unknown, cfg?: HttpRequestConfig) => {
-    cfg = {
-      ...cfg,
-      cancelToken: cfg?.cancelToken ?? http.cancelPrev(`_put${url}`),
-    };
-    return errorHandler(axios.put<T>(url, data, cfg), cfg);
-  },
-
-  /** Delete request */
-  delete: <T>(url: string, cfg?: HttpRequestConfig) => errorHandler(axios.delete<T>(url, cfg), cfg),
-
-  // todo re-use it in global handler
-  onError: (errorMsg: string) => {
-    console.error("Unhandled httpService errors", errorMsg);
-  },
-
-  /** Download file with pointed URL; WARN: point newFileName without file-extension */
-  download: (url: string, newFileName?: string, preventSaveAs?: boolean, cfg?: HttpRequestConfig) => {
-    cfg = {
-      ...cfg,
-      responseType: "blob", // 'blob' is important for properly converting by axios
-      withCredentials: false,
+      headers: { ...HttpClient.defaults.headers, ...cfg?.headers },
     };
 
     try {
-      return http.get<File>(url, cfg).then((res) => {
-        let fileName = newFileName;
-        if (!fileName) {
-          const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-          const matches = filenameRegex.exec(res.headers["content-disposition"]);
-          fileName = (matches && matches[1].replace(/['"]/g, "")) || "";
-        }
-
-        const blob = new Blob([res.data], { type: res.headers["content-type"] });
-        !preventSaveAs && http.saveAs(blob, fileName);
-        return blob;
-      });
-    } catch {
-      throw new Error("Pointed file not found");
+      const res = (await fetch(url, cfg)) as HttpResponse<T>;
+      // cast to JSON
+      const h = res.headers.get("content-type");
+      if (h?.startsWith("application/json")) {
+        res.data = await res.json();
+        res.data = tryParseJSONDate(res.data); // Find & convert all Date-strings to Date-object
+      } /* else if (h?.startsWith("text")) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        res.data = (await res.text()) as any;
+      }*/
+      if (!res.ok) {
+        console.error(res);
+        const msg = (res.data as any)?.message || res.data || `${res.status} ${res.statusText}`;
+        const err = new Error(msg);
+        (err as any).details = res;
+        return Promise.reject(err);
+      }
+      // res.headers.forEach(console.warn);
+      return res;
+    } catch (err) {
+      // error when no internet connection
+      console.error(err);
+      return Promise.reject(err);
     }
-  },
+  }
+
+  /** GET request */
+  get<T>(url: string | RequestInfo, cfg?: HttpReqInit): Promise<HttpResponse<T>> {
+    return this.fetch<T>("GET", url, null, cfg);
+  }
+
+  /** Add new data/change security info */
+  post<T>(url: string, data?: HttpReqData, cfg?: HttpReqInit): Promise<HttpResponse<T>> {
+    return this.fetch<T>("POST", url, data, cfg);
+  }
+
+  /** Update existed data and cancel previous if it's not finished */
+  put<T>(url: string, data?: HttpReqData, cfg?: HttpReqInit): Promise<HttpResponse<T>> {
+    // todo add canceling
+    return this.fetch<T>("PUT", url, data, cfg);
+  }
+
+  /** DELETE request */
+  delete<T>(url: string, cfg?: HttpReqInit): Promise<HttpResponse<T>> {
+    return this.fetch<T>("DELETE", url, null, cfg);
+  }
 
   /** Save blob to local disk/storage */
-  saveAs: (blob: Blob, fileName: string) => {
+  saveAs(blob: Blob, fileName: string) {
     const href = window.URL.createObjectURL(blob);
     const el = document.createElement("a");
     el.setAttribute("href", href);
     el.setAttribute("download", fileName || "downloadedFile");
     el.click();
 
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((res) => {
       setTimeout(() => {
         el.remove();
         window.URL.revokeObjectURL(href);
-        resolve();
+        res();
       }, 100);
     });
-  },
+  }
 
-  // uncomment & install jszip for usage
-  /** Download pointed files and zip-archive; @archiveName without extension */
-  // downloadAndZip: async (fileUrls: IDownloadFile[], archiveName: string) => {
-  //   // eslint-disable-next-line new-cap
-  //   const zip = new (await import("jszip")).default();
-  //   const folder = zip.folder(archiveName);
-  //   if (folder == null) {
-  //     throw new Error("Failed upload files attempt");
-  //   }
+  /** Download file with pointed URL; WARN: point newFileName without file-extension */
+  async download(url: string, newFileName?: string, preventSaveAs?: boolean, cfg?: HttpReqInit): Promise<Blob> {
+    cfg = {
+      credentials: "omit",
+      ...cfg,
+    };
 
-  //   let duplicatedNamesCount = 1;
-  //   for (let i = 0; i < fileUrls.length; i++) {
-  //     let u = fileUrls[i];
-  //     // eslint-disable-next-line no-await-in-loop
-  //     const blob = await httpService.download(u.url, u.fileName, true);
+    try {
+      const res = await this.get<File>(url, cfg);
+      let fileName: string;
+      if (!newFileName) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const h = res.headers.get("content-disposition");
+        const matches = h && filenameRegex.exec(h);
+        fileName = (matches && matches[1].replace(/['"]/g, "")) || "";
+      } else {
+        fileName = newFileName;
+      }
 
-  //     if (
-  //       fileUrls
-  //         .filter((x) => x.id !== u.id)
-  //         .map((v) => v.fileName)
-  //         .includes(u.fileName)
-  //     ) {
-  //       u = { ...u, fileName: `(${duplicatedNamesCount})${u.fileName}` };
-  //       ++duplicatedNamesCount;
-  //     }
+      // const blob = new Blob([res.data], { type: res.headers.get("content-type")! });
+      const blob = await res.blob();
+      !preventSaveAs && this.saveAs(blob, fileName);
+      return blob;
+    } catch {
+      throw new Error("Pointed file not found");
+    }
+  }
+}
 
-  //     folder.file(u.fileName, blob);
-  //   }
-
-  //   folder.generateAsync({ type: "blob" }).then((content: Blob) => {
-  //     httpService.saveAs(content, `${archiveName}.zip`);
-  //   });
-  // },
-};
-
-export default http;
-
-// WARN: Axios has uploadProgress, interceptors but fetch not
+const httpService = new HttpClient();
+export default httpService;
