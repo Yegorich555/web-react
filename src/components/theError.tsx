@@ -1,27 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import stylesShared from "../styles/shared.m.scss";
 import styles from "./theError.scss";
 
-interface ITheErrorProps {
-  errorMsg?: string;
-  onClosed?: () => void;
-}
+// WARN: important to handle error before component is mounted
+let showError = (msg: string) => console.error(msg);
 
-export default function TheError(props: ITheErrorProps): JSX.Element {
+window.onerror = (_e, _filename, _line, _col, err) => {
+  showError(err?.message || "");
+  // return true;
+};
+window.onunhandledrejection = (e) => {
+  showError(e.reason.toString());
+  return true; // prevent default error-report
+};
+
+export default function TheError(): JSX.Element | null {
   const [closed, setClosed] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    showError = setErr;
+  }, []);
+
+  if (!err) {
+    return null;
+  }
 
   function onCloseClick(e: React.MouseEvent<HTMLButtonElement>) {
     e.stopPropagation();
 
     setClosed(true);
-    setTimeout(() => {
-      props.onClosed?.call(props);
-    }, 500);
   }
 
   return (
     <div className={cx(styles.theError, closed && styles.closing)} role="alert">
-      {props.errorMsg}
+      {err}
       <button className={stylesShared.wupBtnIcon} type="button" aria-label="close error" onClick={onCloseClick} />
     </div>
   );

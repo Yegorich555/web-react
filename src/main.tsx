@@ -3,11 +3,12 @@ import "./helpers/classNames";
 import "ytech-js-extensions/lib/date"; // extend default Date type
 import "ytech-js-extensions/lib/array"; // extend default Array type
 
-import { Component, ErrorInfo } from "react";
+import { Component } from "react";
 import ReactDOM from "react-dom/client";
 import TheHeader from "./components/theHeader";
 import Login from "./components/account/login";
 import TheError from "./components/theError";
+import ErrorBoundary from "./elements/errorBoundary";
 
 interface Props {}
 interface State {}
@@ -16,20 +17,15 @@ class AppContainer extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {};
-    // test class-dead-code
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error("got err", { error, errorInfo });
   }
 
   render() {
     return (
-      <>
-        <TheError errorMsg="This is test message" />
+      <ErrorBoundary>
+        <TheError />
         <TheHeader />
         <Login />
-      </>
+      </ErrorBoundary>
     );
   }
 }
