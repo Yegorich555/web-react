@@ -192,3 +192,5 @@ const http = {
 };
 
 export default http;
+
+// WARN: Axios has uploadProgress, interceptors but fetch not
