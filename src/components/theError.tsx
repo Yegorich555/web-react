@@ -1,9 +1,27 @@
-import { useEffect, useState } from "react";
 import stylesShared from "../styles/shared.m.scss";
 import styles from "./theError.scss";
 
 // WARN: important to handle error before component is mounted
-let showError = (msg: string) => console.error(msg);
+
+let el: HTMLElement | undefined;
+const showError = (msg: string) => {
+  el?.remove();
+  el = document.createElement("div");
+  el.className = styles.theError;
+  el.setAttribute("role", "alert");
+  el.append(msg);
+  const btn = el.appendChild(document.createElement("button"));
+  btn.className = stylesShared.wupBtnIcon;
+  btn.type = "button";
+  btn.setAttribute("aria-label", "close error");
+  btn.onclick = () => {
+    if (el) {
+      el.classList.add(styles.closing);
+      setTimeout(() => el?.remove(), 400);
+    }
+  };
+  document.body.appendChild(el);
+};
 
 window.onerror = (_e, _filename, _line, _col, err) => {
   showError(err?.message || "");
@@ -14,28 +32,27 @@ window.onunhandledrejection = (e) => {
   return true; // prevent default error-report
 };
 
-export default function TheError(): JSX.Element | null {
-  const [closed, setClosed] = useState(false);
-  const [err, setErr] = useState("");
+// WARN: The Component isn't rendered in React if something wrong with another render
+// export default function TheError(): JSX.Element | null {
+//   const [closed, setClosed] = useState(false);
+//   const [err, setErr] = useState("");
 
-  useEffect(() => {
-    showError = setErr;
-  }, []);
+//   useEffect(() => {
+//     showError = setErr;
+//   }, []);
 
-  if (!err) {
-    return null;
-  }
+//   if (!err) {
+//     return null;
+//   }
+//   function onCloseClick(e: React.MouseEvent<HTMLButtonElement>) {
+//     e.stopPropagation();
+//     setClosed(true);
+//   }
 
-  function onCloseClick(e: React.MouseEvent<HTMLButtonElement>) {
-    e.stopPropagation();
-
-    setClosed(true);
-  }
-
-  return (
-    <div className={cx(styles.theError, closed && styles.closing)} role="alert">
-      {err}
-      <button className={stylesShared.wupBtnIcon} type="button" aria-label="close error" onClick={onCloseClick} />
-    </div>
-  );
-}
+//   return (
+//     <div className={cx(styles.theError, closed && styles.closing)} role="alert">
+//       {err}
+//       <button className={stylesShared.wupBtnIcon} type="button" aria-label="close error" onClick={onCloseClick} />
+//     </div>
+//   );
+// }

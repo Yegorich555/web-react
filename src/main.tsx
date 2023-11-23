@@ -8,7 +8,7 @@ import { Component } from "react";
 import ReactDOM from "react-dom/client";
 import TheHeader from "./components/theHeader";
 import Login from "./components/account/login";
-import TheError from "./components/theError";
+import "./components/theError";
 import ErrorBoundary from "./elements/errorBoundary";
 
 interface Props {}
@@ -22,11 +22,13 @@ class AppContainer extends Component<Props, State> {
 
   render() {
     return (
-      <ErrorBoundary>
-        <TheError />
-        <TheHeader />
-        <Login />
-      </ErrorBoundary>
+      <>
+        {/* <TheError /> */}
+        <ErrorBoundary>
+          <TheHeader />
+          <Login />
+        </ErrorBoundary>
+      </>
     );
   }
 }
