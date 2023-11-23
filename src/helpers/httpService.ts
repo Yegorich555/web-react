@@ -144,3 +144,6 @@ export class HttpClient {
 
 const httpService = new HttpClient();
 export default httpService;
+
+// todo test download
+// todo test cancelling

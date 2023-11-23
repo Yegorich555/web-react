@@ -14,9 +14,13 @@ export default function Login() {
     <Form onSubmit={(e) => apiLogin(e.detail.model as ILoginModel)}>
       <h2>Login</h2>
       <TextControl name="email" validations={{ required: true, email: true }} />
-      <PasswordControl name="password" isStrict validations={{ required: true }} validationShowAll />
+      <PasswordControl
+        name={nameof<ILoginModel>("password")}
+        isStrict
+        validations={{ required: true }}
+        validationShowAll
+        validationRules={{}}
+      />
     </Form>
   );
 }
-
-// todo change "email" & "password" to nameof
