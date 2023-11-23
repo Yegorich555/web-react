@@ -79,6 +79,9 @@ module.exports = function (env, argv) {
           use: [
             "babel-loader", // transpile *.js, *.jsx, *.ts, *.tsx to result according to .browserslistrc and babel.config.js files
             {
+              loader: path.resolve("./webpack.funcLoader.js"), // replace `nameof` to plain string
+            },
+            {
               loader: "ts-loader", // transpile *.ts to *.js, despite babel-loader deals with typeScript without restrictions but doesn't have .browserslist support
               options: {
                 transpileOnly: true, // we don't type checking during the compilation - it's task for CodeEditor
