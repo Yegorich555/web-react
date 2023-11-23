@@ -5,11 +5,7 @@ import BaseControl, { BaseControlProps } from "./baseControl";
 WUPTextControl.$use(); // register control in the browser
 // WUPTextControl.$defaults.clearButton = false;
 
-interface Props extends Partial<Omit<WUP.Text.Options, "validationRules">>, BaseControlProps {
-  initValue?: string;
-  value?: string;
-  onChange?: WUPTextControl["$onChange"];
-}
+interface Props extends BaseControlProps<string, WUPTextControl, WUP.Text.Options> {}
 
 export default class TextControl extends BaseControl<WUPTextControl, Props> {
   goRender(props: Record<string, unknown>): JSX.Element {

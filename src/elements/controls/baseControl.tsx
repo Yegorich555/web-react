@@ -2,12 +2,25 @@
 import WUPBaseControl from "web-ui-pack/controls/baseControl";
 import BaseWUP from "../baseWUP";
 
-export interface BaseControlProps /* extends Pick<Partial<WUP.BaseControl.Options>, "name" | "label"> */ {
+interface BaseControlP<T, C extends WUPBaseControl<any, any, any>> {
+  /** Property/key of model (collected by form); For name `firstName` >> `model.firstName`; for `nested.firstName` >> `model.nested.firstName` etc.
+   * * @tutorial
+   * * point `null` to completely detach from FormElement
+   * * point `''`(empty string) to partially detach (exclude from `form.$model`, `form.$isChanged`, but included in validations & submit) */
+  name: NameofResult | "" | null;
   className?: string;
-  initValue?: any;
-  value?: any;
-  onChange?: WUPBaseControl["$onChange"];
+  onChange?: C["$onChange"];
+
+  initValue?: T;
+  value?: T;
 }
+
+export type BaseControlProps<
+  T = any,
+  C extends WUPBaseControl<any, any, any> = WUPBaseControl<any, any, any>,
+  O extends WUP.BaseControl.Options<any, any> = WUP.BaseControl.Options<any, any>,
+  // exclude some options because better to redefine it in static $defaults
+> = Partial<Omit<O, "name" | "validationRules" | "validateDebounceMs">> & BaseControlP<T, C>;
 
 export default abstract class BaseControl<
   T extends WUPBaseControl = WUPBaseControl,
