@@ -33,6 +33,7 @@ export default abstract class BaseControl<
 > extends BaseWUP<T, P> {
   override updateOptions(nextProps: P, isInit: boolean): void {
     super.updateOptions(nextProps, isInit);
+    this.domEl.$options.validations = nextProps.vls;
 
     this.domEl.$onChange = nextProps.onChange;
     if (isInit || nextProps.value !== this.props.value) {

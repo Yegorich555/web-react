@@ -22,7 +22,7 @@ export default class PasswordControl extends BaseControl<WUPPasswordControl, Pro
   override updateOptions(p: Props, isInit: boolean): void {
     if (p?.isStrict) {
       // eslint-disable-next-line no-param-reassign
-      p = { ...p, validations: { ...p.validations, ...strictValidations } };
+      p = { ...p, vls: { ...p.vls, ...strictValidations } };
     }
     super.updateOptions(p, isInit);
   }
