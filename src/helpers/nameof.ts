@@ -1,7 +1,7 @@
 type NameofFunc = <T>(propName: Extract<keyof T, string>) => NameofResult;
 
 declare global {
-  type NameofResult = symbol; // this is forbid using ordinary strings for control.name
+  type NameofResult = symbol; // this forbids using ordinary strings for control.name
   /** This is single way in TS tie Interface with string as prop-key
    * @example
    * ```

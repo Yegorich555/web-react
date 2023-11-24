@@ -1,6 +1,10 @@
 # Web React Template
 
-Webpack version: 5+
+**Webpack** version: 5+
+**React** version: 18+
+**NodeJS** version: 18+
+
+High scalable solution for Frontend development based on [webpack-must-have](https://github.com/Yegorich555/webpack-must-have) template
 
 ## How to run project
 
@@ -33,11 +37,10 @@ Webpack version: 5+
 - **BrowserList. StyleLint**. Integrated [no-unsupported-browser-features](https://www.npmjs.com/package/stylelint-no-unsupported-browser-features), so during the css,scss-coding styleLint will show on-css rule that unsupported (according to .browserslistrc)
 - **MockServer**. For mocking api responses integrated [webpack-mock-server](https://www.npmjs.com/package/webpack-mock-server) that supports JS,TS and hot-replacement:
 - **Styles**. Integrated [CSS-Modules](https://github.com/css-modules/css-modules) and [postcss-autoprefixer](https://www.npmjs.com/package/autoprefixer), [postcss-normalize](https://www.npmjs.com/package/postcss-normalize), [CssMinimizerPlugin](https://www.npmjs.com/package/css-minimizer-webpack-plugin) (uses [css-nano](https://cssnano.co/) for production build)
-
-## Recommended npm-packages
-
-- [web-ui-pack](https://www.npmjs.com/package/web-ui-pack) - nice package with form-controls, smart-popup, spinner etc. & useful helpers
-- [ytech-js-extensions](https://www.npmjs.com/package/ytech-js-extensions) - very common extensions for Arrays, Dates (that lacks in web-ui-pack)
+- Perfect forms with [web-ui-pack](https://www.npmjs.com/package/web-ui-pack)
+- Global **nameof** function + webpack loader to strict tie controls with Interfaces (TS lacks nameof by default)
+- Global helper **cx** to allow use React.className with arrays
+- Prepared for using with multiple languages: see [./helpers/lang.ts]([./helpers/lang.ts) section
 
 ## Troubleshooting
 
