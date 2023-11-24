@@ -14,8 +14,8 @@ export default function Login() {
     <Form onSubmit={(e) => apiLogin(e.detail.model as ILoginModel)}>
       {/* todo wupLn reuse for multi-lang */}
       <h2>Login</h2>
-      <TextControl name={nameof<ILoginModel>("email")} validations={{ required: true, email: true }} />
-      <PasswordControl name={nameof<ILoginModel>("password")} isStrict validations={{ required: true }} validationShowAll />
+      <TextControl name={nameof<ILoginModel>("email")} vls={{ required: true, email: true }} />
+      <PasswordControl name={nameof<ILoginModel>("password")} isStrict vls={{ required: true }} validationShowAll />
     </Form>
   );
 }

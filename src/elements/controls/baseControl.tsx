@@ -20,7 +20,12 @@ export type BaseControlProps<
   C extends WUPBaseControl<any, any, any> = WUPBaseControl<any, any, any>,
   O extends WUP.BaseControl.Options<any, any> = WUP.BaseControl.Options<any, any>,
   // exclude some options because better to redefine it in static $defaults
-> = Partial<Omit<O, "name" | "validationRules" | "validateDebounceMs">> & BaseControlP<T, C>;
+> = Partial<Omit<O, "name" | "validationRules" | "validateDebounceMs" | "validations">> &
+  BaseControlP<T, C> & {
+    /** Shorthand of `validations`: validation rules enabled for current control
+     * @see {@link WUP.BaseControl.Options.validations} */
+    vls?: O["validations"];
+  };
 
 export default abstract class BaseControl<
   T extends WUPBaseControl = WUPBaseControl,
