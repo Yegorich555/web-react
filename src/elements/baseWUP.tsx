@@ -29,12 +29,16 @@ export default abstract class BaseWUP<
 
   abstract goRender(props: React.ClassAttributes<HTMLDivElement> & { class?: string }): JSX.Element;
 
-  render(): JSX.Element {
-    return this.goRender({
+  renderProps(): React.ClassAttributes<HTMLDivElement> & { class?: string } {
+    return {
       class: this.props.className,
       ref: (el) => {
         this.domEl = el || (this.domEl as any) || ({} as any);
       },
-    });
+    };
+  }
+
+  render(): JSX.Element {
+    return this.goRender(this.renderProps());
   }
 }
