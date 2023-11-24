@@ -1,6 +1,7 @@
 import "./styles";
 import "./helpers/classNames";
 import "./helpers/nameof";
+import "./helpers/lang";
 import "ytech-js-extensions/lib/date"; // extend default Date type
 import "ytech-js-extensions/lib/array"; // extend default Array type
 

@@ -101,6 +101,9 @@ module.exports = function (env, argv) {
           })(),
           use: [
             "babel-loader", // transpile *.js, *.jsx, *.ts, *.tsx to result according to .browserslistrc and babel.config.js files
+            {
+              loader: path.resolve("./webpack.langLoader.js"), // tied with helpers/lang.ts + web-ui-pack
+            },
             // optional: "ifdef-loader" // provides conditional compilation: https://github.com/nippur72/ifdef-loader
             // optional: "eslint-loader" // provides lint-errors into webpack output
           ],
