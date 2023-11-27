@@ -1,7 +1,10 @@
 .header {
+  height: $headerH;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: $baseBg1;
+  border-bottom: 1px solid $borderColor;
 
   > img {
     width: 2em;

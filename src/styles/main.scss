@@ -14,6 +14,7 @@ body {
   font: 14px "OpenSans-Regular", sans-serif;
   min-height: 100vh;
   background: top / contain url(images/background.svg) no-repeat;
+  background-color: $baseBg2;
 
   &::-webkit-scrollbar {
     width: 12px;
