@@ -11,9 +11,14 @@ import TheHeader from "./components/theHeader";
 import Login from "./components/account/login";
 import "./components/theError";
 import ErrorBoundary from "./elements/errorBoundary";
+import { apiGetCurrentUser } from "./components/account/api.request";
+import { IBaseUser } from "./components/account/api.types";
+import Dashboard from "./components/dashboard";
 
 interface Props {}
-interface State {}
+interface State {
+  user?: IBaseUser | null;
+}
 
 class AppContainer extends Component<Props, State> {
   constructor(props: Props) {
@@ -21,15 +26,20 @@ class AppContainer extends Component<Props, State> {
     this.state = {};
   }
 
+  componentDidMount(): void {
+    // todo trigger here every time on user change because routes depends on it
+    apiGetCurrentUser().then((user) => {
+      this.setState({ user });
+    });
+  }
+
   render() {
+    // todo add routing + logic trigger
     return (
-      <>
-        {/* <TheError /> */}
-        <ErrorBoundary>
-          <TheHeader />
-          <Login />
-        </ErrorBoundary>
-      </>
+      <ErrorBoundary>
+        <TheHeader />
+        {!this.state.user ? <Login /> : <Dashboard />}
+      </ErrorBoundary>
     );
   }
 }
