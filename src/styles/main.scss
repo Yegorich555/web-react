@@ -6,12 +6,12 @@
   --base-margin: 1.6rem;
   --border-radius: 6px;
   --anim-t: 300ms;
+  // prettier-ignore
+  font: 14px "OpenSans-Regular", sans-serif;
 }
 
 body {
   color: $baseTextColor;
-  // prettier-ignore
-  font: 14px "OpenSans-Regular", sans-serif;
   min-height: 100vh;
   background: top / contain url(images/background.svg) no-repeat;
   background-color: $baseBg2;
@@ -26,7 +26,7 @@ h1 {
   font-size: 2.2em;
   text-align: center;
   margin: 0;
-  padding: $baseMargin;
+  padding: 0;
 }
 
 h2 {
