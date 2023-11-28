@@ -1,13 +1,9 @@
 @font-face {
   font-family: "OpenSans-Regular";
-  /* IE9 Compatibility Modes */
-  src: url("fonts/OpenSans-Regular.eot");
-  /* IE6-IE8 */
-  src:
-    /* Super Modern Browsers */
-    url("fonts/OpenSans-Regular.woff2") format("woff2"),
-    /* Pretty Modern Browsers */ url("fonts/OpenSans-Regular.woff") format("woff"),
-    /* Safari, Android, iOS */ url("fonts/OpenSans-Regular.ttf") format("truetype");
+  /* stylelint-disable-next-line prettier/prettier */
+  src: url("fonts/OpenSans-Regular.woff2") format("woff2"), /* Super Modern Browsers */
+       url("fonts/OpenSans-Regular.woff") format("woff"), /* Pretty Modern Browsers */
+       url("fonts/OpenSans-Regular.ttf") format("truetype"); /* Safari, Android, iOS */
   font-weight: normal;
   font-style: normal;
 }
