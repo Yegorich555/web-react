@@ -25,8 +25,6 @@ function AppContainer(): JSX.Element {
     apiGetCurrentUser();
   }, []);
 
-  // todo add logout NOW !!!!
-
   return (
     <ErrorBoundary>
       <BrowserRouter>

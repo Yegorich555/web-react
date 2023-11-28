@@ -1,6 +1,7 @@
 import Form from "@/elements/form";
 import PasswordControl from "@/elements/controls/password";
 import TextControl from "@/elements/controls/text";
+import CheckControl from "@/elements/controls/check";
 import { apiLogin } from "./api.request";
 import { ILoginModel } from "./api.types";
 //
@@ -12,6 +13,9 @@ export default function Login() {
       <h2>Login</h2>
       <TextControl name={nameof<ILoginModel>("email")} vls={{ required: true, email: true }} />
       <PasswordControl name={nameof<ILoginModel>("password")} vls={{ required: true }} />
+      <div className={styles.inlineGroup}>
+        <CheckControl name={nameof<ILoginModel>("rememberMe")} />
+      </div>
     </Form>
   );
 }

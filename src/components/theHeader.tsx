@@ -14,6 +14,7 @@ export default function TheHeader() {
         <img src={imgLogo} alt="logo" />
         Web React
       </h1>
+      {/*  todo add logout + profile + dark mode toggler */}
       <button className={styles.btnUser} type="button" aria-label="login" onClick={() => setShowLogin(true)}>
         <UserImage {...$u} />
       </button>

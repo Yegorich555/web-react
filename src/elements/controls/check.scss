@@ -1,0 +1,42 @@
+.check {
+  --ctrl-switch-padding: 4px 0;
+  --ctrl-check-size: 20px;
+  --ctrl-check-on-bg: #009fbc;
+  --ctrl-check-border-hover: #009fbc;
+
+  box-shadow: none !important;
+  border: none !important;
+
+  [icon] {
+    border: 2px solid #818181;
+    border-radius: 6px;
+    box-sizing: border-box;
+    position: initial;
+
+    &:before {
+      content: none !important;
+    }
+  }
+
+  &[checked],
+  &:focus-within {
+    [icon] {
+      border-color: var(--ctrl-check-on-bg);
+    }
+  }
+
+  @media not all and (prefers-reduced-motion) {
+    [icon] {
+      transition: background-color var(--anim);
+    }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      opacity: 0.9;
+
+      [icon] {
+        border-color: var(--ctrl-check-on-bg);
+      }
+    }
+  }
+}

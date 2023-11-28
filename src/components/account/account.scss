@@ -3,3 +3,11 @@
     content: none !important;
   }
 }
+
+.inlineGroup {
+  display: flex;
+
+  > wup-check {
+    margin: 0;
+  }
+}
