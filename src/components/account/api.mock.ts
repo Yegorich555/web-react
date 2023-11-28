@@ -2,7 +2,7 @@
 /* This file contains api-mock-response to help you develop UI without real API side */
 import webpackMockServer from "webpack-mock-server";
 import api from "@/api.endpoints";
-import { IBaseUser, UserRoles } from "./api.types";
+import { IBaseUser, ILoginModel, UserRoles } from "./api.types";
 
 const mockUser: IBaseUser = {
   id: 1,
@@ -11,9 +11,14 @@ const mockUser: IBaseUser = {
   email: "will.smith@mailbox.com",
   role: UserRoles.sa,
 };
+let rememberMe = false;
 
 export default webpackMockServer.add((app) => {
-  app.get(api.accCurrent, (_, res) => res.json(mockUser && null));
-  app.post(api.accSignIn, (req, res) => res.json({ ...mockUser, email: req.body.email }));
+  app.get(api.accCurrent, (_, res) => res.json(rememberMe ? mockUser : null));
+  app.post(api.accSignIn, (req, res) => {
+    const body = req.body as ILoginModel;
+    rememberMe = !!body.rememberMe;
+    res.json({ ...mockUser, email: body.email });
+  });
   app.post(api.accSignOut, (_, res) => res.json(null));
 });
