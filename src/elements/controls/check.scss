@@ -1,14 +1,14 @@
 .check {
   --ctrl-switch-padding: 4px 0;
   --ctrl-check-size: 20px;
-  --ctrl-check-on-bg: #009fbc;
-  --ctrl-check-border-hover: #009fbc;
+  --ctrl-check-on-bg: #{$checkActive};
+  --ctrl-check-border-hover: #{$checkActive};
 
   box-shadow: none !important;
   border: none !important;
 
   [icon] {
-    border: 2px solid #818181;
+    border: 2px solid $checkBorder;
     border-radius: 6px;
     box-sizing: border-box;
     position: initial;
@@ -21,7 +21,7 @@
   &[checked],
   &:focus-within {
     [icon] {
-      border-color: var(--ctrl-check-on-bg);
+      border-color: $checkActive;
     }
   }
 
@@ -35,8 +35,13 @@
       opacity: 0.9;
 
       [icon] {
-        border-color: var(--ctrl-check-on-bg);
+        border-color: $checkActive;
       }
     }
   }
+}
+
+[wupdark] {
+  --ctrl-check-off-bg: none;
+  --ctrl-check-on: #000;
 }
