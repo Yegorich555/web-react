@@ -1,0 +1,14 @@
+$icomoon-font-path: "~fonts/icomoon/fonts";
+@import "~fonts/icomoon/style.scss";
+
+@font-face {
+  font-family: "OpenSans-Regular";
+  /* stylelint-disable-next-line prettier/prettier */
+  src:
+  /* Super Modern Browsers */
+    url("fonts/OpenSans-Regular.woff2") format("woff2"),
+    /* Pretty Modern Browsers */ url("fonts/OpenSans-Regular.woff") format("woff"),
+    /* Safari, Android, iOS */ url("fonts/OpenSans-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}

@@ -8,3 +8,11 @@
   line-height: 2.5em;
   text-align: center;
 }
+
+.userIcon {
+  @include iconAfter($icon-profile);
+
+  &:after {
+    font-size: large;
+  }
+}

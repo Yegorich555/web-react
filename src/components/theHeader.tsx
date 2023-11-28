@@ -10,7 +10,6 @@ export default function TheHeader() {
         Web React
       </h1>
       <span>
-        Login
         <UserImage {...$u} />
       </span>
     </div>

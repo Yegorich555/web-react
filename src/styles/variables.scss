@@ -1,3 +1,5 @@
+@import "~fonts/icomoon/variables.scss";
+
 $borderR: var(--border-radius);
 $baseMargin: var(--base-margin) 0;
 $headerH: 4rem;
@@ -8,3 +10,23 @@ $borderColor: var(--base-border, #e1e1e1);
 $baseTextColor: var(--base-text, #575e72);
 $avatarBg: var(--avatar-bg, #19bdb5);
 $avatarText: var(--avatar-text, #fff);
+
+@mixin iconBefore($name) {
+  &:before {
+    font-family: "#{$icomoon-font-family}" !important;
+    content: $name;
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@mixin iconAfter($name) {
+  &:after {
+    font-family: "#{$icomoon-font-family}" !important;
+    content: $name;
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
