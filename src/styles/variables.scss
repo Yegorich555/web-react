@@ -10,6 +10,7 @@ $borderColor: var(--base-border, #e1e1e1);
 $baseTextColor: var(--base-text, #575e72);
 $avatarBg: var(--avatar-bg, #19bdb5);
 $avatarText: var(--avatar-text, #fff);
+$avatarBgOff: var(--avatar-bg-off, gray);
 
 @mixin iconBefore($name) {
   &:before {
