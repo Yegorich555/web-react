@@ -18,7 +18,7 @@ export default abstract class BaseWUP<
     const isChanged = this.props !== nextProps;
     isChanged && this.updateOptions(nextProps, false);
     // update render only if className is changed otherwise apply props directly for options
-    return this.props.className !== nextProps.className;
+    return this.props.className !== nextProps.className || this.props.children !== nextProps.children;
   }
 
   /* Apply React props for $options */

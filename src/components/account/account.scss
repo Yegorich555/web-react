@@ -1,4 +1,4 @@
-.hideReqMark {
+.authForm {
   strong:after {
     content: none !important;
   }
@@ -6,8 +6,26 @@
 
 .inlineGroup {
   display: flex;
+  align-items: center;
 
   > wup-check {
     margin: 0;
+  }
+
+  > .btnForgot {
+    color: $linkText;
+    margin: 0;
+    padding: 0.5em 1em;
+    border-radius: 999px;
+    --btn-forgot-hover: rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      opacity: 1;
+      box-shadow: inset 0 0 0 99999px var(--btn-forgot-hover);
+    }
+
+    [wup-dark] {
+      --btn-forgot-hover: #fff2;
+    }
   }
 }

@@ -35,11 +35,15 @@ main {
 }
 
 h2 {
-  font-size: 2em;
+  font-size: 1.8em;
   margin: 0 var(--base-margin) var(--base-margin) 0;
 }
 
 button {
+  background: none;
+  border: none;
+  font: inherit;
+
   cursor: pointer;
   box-sizing: border-box;
   justify-content: center;

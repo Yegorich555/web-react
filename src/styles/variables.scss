@@ -14,6 +14,8 @@ $avatarBgOff: var(--avatar-bg-off, #818181);
 
 $checkBorder: var(--check-border, #818181);
 $checkActive: var(--check-active, #009fbc);
+$linkText: var(--link, #009fbc);
+$linkTextHover: var(--link, #01505e);
 
 @mixin iconBefore($name) {
   &:before {

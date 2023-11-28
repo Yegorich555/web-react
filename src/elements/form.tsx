@@ -30,7 +30,7 @@ export default class Form extends BaseWUP<WUPFormElement, Props> {
     return (
       <wup-form {...props}>
         {this.props.children}
-        <button type="submit">Submit</button>
+        {/* <button type="submit">Submit</button> */}
       </wup-form>
     );
   }
