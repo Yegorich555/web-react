@@ -6,6 +6,7 @@
   --base-margin: 1.6rem;
   --border-radius: 6px;
   --anim-t: 300ms;
+  --anim: var(--anim-t) cubic-bezier(0, 0, 0.2, 1) 0ms;
   // prettier-ignore
   font: 14px "OpenSans-Regular", sans-serif;
 }
@@ -29,9 +30,13 @@ h1 {
   padding: 0;
 }
 
+main {
+  padding: var(--base-margin);
+}
+
 h2 {
   font-size: 2em;
-  margin: $baseMargin;
+  margin: 0 var(--base-margin) var(--base-margin) 0;
 }
 
 button {
@@ -41,8 +46,23 @@ button {
   align-items: center;
   border-radius: $borderR;
   margin: $baseMargin;
+  transition:
+    opacity var(--anim),
+    box-shadow var(--anim);
+
+  &:hover {
+    opacity: 0.9;
+  }
 }
 
 button[disabled] {
   cursor: default;
+
+  &:hover {
+    opacity: initial;
+  }
+}
+
+wup-modal button[close] {
+  z-index: 10; // todo remove after web-ui-pack update
 }

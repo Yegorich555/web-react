@@ -31,7 +31,7 @@ function AppContainer(): JSX.Element {
     <ErrorBoundary>
       <BrowserRouter>
         <TheHeader />
-        {/* {!this.state.user ? <Login /> : <Dashboard />} */}
+        {/* {!user ? <Login /> : <Dashboard />} */}
         <main>
           <Routes>
             {Object.keys(routes).map((k) => {

@@ -8,7 +8,7 @@ import styles from "./account.scss";
 
 export default function Login() {
   return (
-    <Form onSubmit={(e) => apiLogin(e.detail.model as ILoginModel)} className={styles.hideReqMark} autoComplete>
+    <Form onSubmit={(e) => apiLogin(e.detail.model as ILoginModel)} className={styles.hideReqMark} autoComplete autoStore={false}>
       <h2>Login</h2>
       <TextControl name={nameof<ILoginModel>("email")} vls={{ required: true, email: true }} />
       <PasswordControl name={nameof<ILoginModel>("password")} vls={{ required: true }} />

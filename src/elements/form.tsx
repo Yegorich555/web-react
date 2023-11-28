@@ -9,8 +9,7 @@ interface Props extends React.PropsWithChildren<Partial<WUP.Form.Options>> {
   className?: string;
   initModel?: WUPFormElement["$initModel"];
   model?: WUPFormElement["$model"];
-  /* eslint-disable-next-line react/no-unused-prop-types  */
-  onSubmit?: WUPFormElement["$onSubmit"]; // somehow linter is wrong here
+  onSubmit?: WUPFormElement["$onSubmit"];
 }
 
 export default class Form extends BaseWUP<WUPFormElement, Props> {

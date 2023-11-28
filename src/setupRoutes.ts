@@ -9,12 +9,17 @@ interface IRoute {
   component: React.ComponentType;
 }
 
-const routes = {
+interface AllRoutes {
+  home: IRoute;
+}
+
+const routes: AllRoutes = {
   // public
   home: {
     path: "/",
     title: "Dashboard",
     component: Dashboard,
+    // auth: true,
   },
 
   // private
@@ -25,4 +30,4 @@ const routes = {
   // },
 };
 
-export default routes as Record<keyof typeof routes, IRoute>;
+export default routes; // as Record<keyof typeof routes, IRoute>;
