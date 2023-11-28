@@ -14,6 +14,7 @@ import ErrorBoundary from "./elements/errorBoundary";
 import { apiGetCurrentUser } from "./components/account/api.request";
 import { IBaseUser } from "./components/account/api.types";
 import Dashboard from "./components/dashboard";
+import setupAccess from "./setupAccess";
 
 interface Props {}
 interface State {
@@ -27,20 +28,19 @@ class AppContainer extends Component<Props, State> {
   }
 
   componentDidMount(): void {
-    // todo trigger here every time on user change because routes depends on it
-    apiGetCurrentUser().then((user) => {
-      this.setState({ user });
-    });
+    apiGetCurrentUser();
+    setupAccess.onChange = (user) => this.setState({ user });
   }
 
   render() {
-    // todo add routing + logic trigger
+    // todo add logout NOW !!!!
     return (
       <ErrorBoundary>
         <TheHeader />
         {!this.state.user ? <Login /> : <Dashboard />}
       </ErrorBoundary>
     );
+    // todo add routing + logic trigger
   }
 }
 

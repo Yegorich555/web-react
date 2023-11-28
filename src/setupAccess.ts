@@ -57,20 +57,23 @@ function setupAcc(u: IBaseUser) {
   return r;
 }
 
-interface DisposedFunc {
+interface AccessFunc {
   (u: IBaseUser): void;
   /** Call it on logout */
   dispose: () => void;
+  onChange?: (u: IBaseUser | null) => void;
 }
 
 /** Add user to global window.$u + window.$acc to setup access */
-const setupAccess = <DisposedFunc>function setupAccess(u: IBaseUser): void {
+const setupAccess = <AccessFunc>function setupAccess(u: IBaseUser): void {
   window.$u = Object.freeze(u);
   window.$acc = Object.freeze(setupAcc(u));
+  (setupAccess as AccessFunc).onChange?.call(setupAccess, window.$u);
 };
 setupAccess.dispose = function dispose() {
   window.$u = null;
   window.$acc = null;
+  setupAccess.onChange?.call(this, null);
 };
-
+window.$u = null;
 export default setupAccess;

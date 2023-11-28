@@ -18,6 +18,7 @@ export async function apiLogin(m: ILoginModel): Promise<IBaseUser> {
 
 export async function apiLogout(m: ILoginModel): Promise<IBaseUser> {
   setupAccess.dispose();
+  http.cancelAll();
   const res = await http.post<IBaseUser>(api.accSignOut, m);
   return res.data;
 }

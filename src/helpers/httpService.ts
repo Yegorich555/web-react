@@ -96,6 +96,10 @@ export class HttpClient {
     return this.fetch<T>("DELETE", url, null, cfg);
   }
 
+  cancelAll(): void {
+    console.warn("todo implement");
+  }
+
   /** Save blob to local disk/storage */
   saveAs(blob: Blob, fileName: string) {
     const href = window.URL.createObjectURL(blob);
@@ -142,8 +146,8 @@ export class HttpClient {
   }
 }
 
-const httpService = new HttpClient();
-export default httpService;
+const http = new HttpClient();
+export default http;
 
 // todo test download
 // todo test cancelling
