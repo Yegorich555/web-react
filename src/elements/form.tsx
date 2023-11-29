@@ -3,20 +3,21 @@ import BaseWUP from "./baseWUP";
 
 WUPFormElement.$use(); // register control in the browser
 WUPFormElement.$defaults.autoStore = true;
+// WUPFormElement.$defaults.autoFocus = true;
 
-interface Props extends React.PropsWithChildren<Partial<WUP.Form.Options>> {
+export interface FormProps extends React.PropsWithChildren<Partial<WUP.Form.Options>> {
   className?: string;
   initModel?: WUPFormElement["$initModel"];
   model?: WUPFormElement["$model"];
   onSubmit?: WUPFormElement["$onSubmit"];
 }
 
-export default class Form extends BaseWUP<WUPFormElement, Props> {
+export default class Form extends BaseWUP<WUPFormElement, FormProps> {
   /* Apply React props for $options */
-  updateOptions(nextProps: Props, isInit: boolean): void {
+  updateOptions(nextProps: FormProps, isInit: boolean): void {
     super.updateOptions(nextProps, isInit);
 
-    this.domEl.$onSubmit = nextProps.onSubmit;
+    this.domEl.$onSubmit = (e) => nextProps.onSubmit?.call(this.domEl, e);
     if (isInit || nextProps.model !== this.props.model) {
       this.domEl.$model = nextProps.model!; // update only if value changed
     }
