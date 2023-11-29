@@ -1,3 +1,4 @@
+// eslint-disable-next-line css-modules/no-unused-class
 import stylesShared from "../styles/shared.m.scss";
 import styles from "./theError.scss";
 
@@ -11,7 +12,7 @@ const showError = (msg: string) => {
   el.setAttribute("role", "alert");
   el.append(msg);
   const btn = el.appendChild(document.createElement("button"));
-  btn.className = stylesShared.wupBtnIcon;
+  btn.className = stylesShared.btnIcon;
   btn.type = "button";
   btn.setAttribute("aria-label", "close error");
   btn.onclick = () => {
@@ -52,7 +53,7 @@ window.onunhandledrejection = (e) => {
 //   return (
 //     <div className={cx(styles.theError, closed && styles.closing)} role="alert">
 //       {err}
-//       <button className={stylesShared.wupBtnIcon} type="button" aria-label="close error" onClick={onCloseClick} />
+//       <button className={stylesShared.btnIcon} type="button" aria-label="close error" onClick={onCloseClick} />
 //     </div>
 //   );
 // }

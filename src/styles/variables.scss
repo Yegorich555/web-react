@@ -7,15 +7,27 @@ $headerH: 4rem;
 $baseBg1: var(--base-bg1, #fff);
 $baseBg2: var(--base-bg2, #f5f5fc);
 $borderColor: var(--base-border, #e1e1e1);
-$baseTextColor: var(--base-text, #575e72);
+$baseText: var(--base-text, #575e72);
 $avatarBg: var(--avatar-bg, #19bdb5);
 $avatarText: var(--avatar-text, #fff);
 $avatarBgOff: var(--avatar-bg-off, #818181);
 
+$basicActive: var(--basic-active, #009fbc);
+
 $checkBorder: var(--check-border, #818181);
-$checkActive: var(--check-active, #009fbc);
-$linkText: var(--link, #009fbc);
+$checkActive: var(--check-active, $basicActive);
+$linkText: var(--link, $basicActive);
 $linkTextHover: var(--link, #01505e);
+
+// $btn: var(--btn, $baseBg1);
+// $btn-bg: var(--btn-bg, $basicActive);
+// $btn-h: var(--btn-h, $basic-active200);
+// $btn-f: var(--btn-f, $basic-active300);
+// $btn-d: var(--btn-d, $basic-inactive500);
+// $btn-d-bg: var(--btn-d-bg, $border-color);
+
+$btn2Bg: var(--base-btn2-bg, #6c757d);
+$btn2Text: var(--base-btn2-text, #fff);
 
 @mixin iconBefore($name) {
   &:before {

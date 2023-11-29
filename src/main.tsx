@@ -16,6 +16,7 @@ import { IBaseUser } from "./components/account/api.types";
 import setupAccess from "./setupAccess";
 import routes from "./setupRoutes";
 import Page from "./elements/page";
+import Login from "./components/account/login";
 
 function AppContainer(): JSX.Element {
   const [user, setUser] = useState<IBaseUser | null>(null);
@@ -29,7 +30,7 @@ function AppContainer(): JSX.Element {
     <ErrorBoundary>
       <BrowserRouter>
         <TheHeader />
-        {/* {!user ? <Login /> : <Dashboard />} */}
+        <Login />
         <main>
           <Routes>
             {Object.keys(routes).map((k) => {

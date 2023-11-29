@@ -1,0 +1,10 @@
+.btnGroup {
+  display: flex;
+  gap: calc(var(--base-margin) / 2);
+  margin-top: var(--base-margin);
+  justify-content: flex-end;
+
+  > button {
+    margin: 0 !important;
+  }
+}

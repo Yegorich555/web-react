@@ -12,7 +12,7 @@
 }
 
 body {
-  color: $baseTextColor;
+  color: $baseText;
   min-height: 100vh;
   background: top / contain url(images/background.svg) no-repeat;
   background-color: $baseBg2;
@@ -23,15 +23,15 @@ body {
   }
 }
 
+main {
+  padding: var(--base-margin);
+}
+
 h1 {
   font-size: 2.2em;
   text-align: center;
   margin: 0;
   padding: 0;
-}
-
-main {
-  padding: var(--base-margin);
 }
 
 h2 {
@@ -40,31 +40,11 @@ h2 {
 }
 
 button {
-  background: none;
-  border: none;
-  font: inherit;
-
-  cursor: pointer;
-  box-sizing: border-box;
-  justify-content: center;
-  align-items: center;
-  border-radius: $borderR;
   margin: $baseMargin;
   transition:
-    opacity var(--anim),
-    box-shadow var(--anim);
-
-  &:hover {
-    opacity: 0.9;
-  }
-}
-
-button[disabled] {
-  cursor: default;
-
-  &:hover {
-    opacity: initial;
-  }
+    background-color var(--anim),
+    box-shadow var(--anim),
+    border var(--anim);
 }
 
 wup-modal button[close] {
