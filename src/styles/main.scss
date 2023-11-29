@@ -41,6 +41,7 @@ h2 {
 }
 
 button {
+  min-width: initial;
   margin: $baseMargin;
   transition:
     background-color var(--anim),
@@ -50,4 +51,8 @@ button {
 
 wup-modal button[close] {
   z-index: 10; // todo remove after web-ui-pack update
+}
+
+wup-form button[type="submit"] {
+  margin-left: auto;
 }
