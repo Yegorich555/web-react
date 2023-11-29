@@ -55,7 +55,11 @@ module.exports = (env, argv) => {
             // res.once("finish", () => {
             //   console.log(`Sent response: ${req.method} ${req.url}`);
             // });
-            next();
+            if (req.url.startsWith("/api")) {
+              setTimeout(next, 500); // delay every mock response for X ms to debug pending states
+            } else {
+              next();
+            }
           },
         });
         return middlewares;

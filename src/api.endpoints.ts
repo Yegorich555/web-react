@@ -5,7 +5,10 @@ const api = {
   // accSignUp: "/api/account/signUp",
   accSignOut: "/api/account/signOut",
   // accRemove: "/api/account/remove",
-  // accForgotPwd: "/api/account/forgotPassword",
-  // accChangePwd: "/api/account/changePassword",
+  /** Send email with instructions to user */
+  accForgotPwd: "/api/account/forgotPassword",
+  /** Reset password to a new one */
+  accResetPwd: "/api/account/resetPassword",
+  accChangePwd: "/api/account/changePassword",
 };
 export default api;

@@ -12,8 +12,26 @@ export interface IBaseUser {
   role: UserRoles;
 }
 
+export interface IForgotPassword {
+  validationCode: number;
+  password: string;
+  passwordConfirm: string;
+}
+
+export interface IUpdatePassword {
+  currentPassword: string;
+  password: string;
+  passwordConfirm: string;
+}
+
+export type INewPasswordModel = IForgotPassword | IUpdatePassword;
+
 export interface ILoginModel {
   email: string;
   password: string;
   rememberMe: boolean;
+}
+
+export interface IForgotModel {
+  email: string;
 }

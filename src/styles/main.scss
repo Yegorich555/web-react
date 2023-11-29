@@ -56,3 +56,9 @@ wup-modal button[close] {
 wup-form button[type="submit"] {
   margin-left: auto;
 }
+
+wup-pwd input[type="password"],
+wup-pwd input[type="password"]:autofill {
+  font-family: Verdana, sans-serif;
+  letter-spacing: 0.125em;
+}

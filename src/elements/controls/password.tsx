@@ -15,7 +15,7 @@ const strictValidations: Partial<WUP.Password.ValidityMap> = {
   minUpper: 1,
   minLower: 1,
   minNumber: 1,
-  special: { min: 1, chars: "!@#$%^&-_" },
+  // special: { min: 1, chars: "!@#$%^&-_" },
 };
 
 export default class PasswordControl extends BaseControl<WUPPasswordControl, Props> {

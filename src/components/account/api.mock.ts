@@ -21,4 +21,6 @@ export default webpackMockServer.add((app) => {
     res.json({ ...mockUser, email: body.email });
   });
   app.post(api.accSignOut, (_, res) => res.json(null));
+  app.post(api.accForgotPwd, (_, res) => res.json({ success: true }));
+  app.post(api.accChangePwd, (_, res) => res.json({ success: true }));
 });

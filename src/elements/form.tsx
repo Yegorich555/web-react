@@ -9,7 +9,8 @@ export interface FormProps extends React.PropsWithChildren<Partial<WUP.Form.Opti
   className?: string;
   initModel?: WUPFormElement["$initModel"];
   model?: WUPFormElement["$model"];
-  onSubmit?: WUPFormElement["$onSubmit"];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onSubmit?: (model: any, ev: WUP.Form.EventMap["$submit"]) => Promise<any>;
 }
 
 export default class Form extends BaseWUP<WUPFormElement, FormProps> {
@@ -17,7 +18,7 @@ export default class Form extends BaseWUP<WUPFormElement, FormProps> {
   updateOptions(nextProps: FormProps, isInit: boolean): void {
     super.updateOptions(nextProps, isInit);
 
-    this.domEl.$onSubmit = (e) => nextProps.onSubmit?.call(this.domEl, e);
+    this.domEl.$onSubmit = (e) => nextProps.onSubmit?.call(this.domEl, e.detail.model, e);
     if (isInit || nextProps.model !== this.props.model) {
       this.domEl.$model = nextProps.model!; // update only if value changed
     }
@@ -28,7 +29,7 @@ export default class Form extends BaseWUP<WUPFormElement, FormProps> {
 
   goRender(props: Record<string, unknown>): JSX.Element {
     return (
-      <wup-form {...props}>
+      <wup-form {...props} autocomplete="off">
         {this.props.children}
         {/* <button type="submit">Submit</button> */}
       </wup-form>
