@@ -52,7 +52,7 @@ export default function ForgotPassword({ onBack, email, shared }: Props): JSX.El
 
   // if (step === 2) {
   return (
-    <Form {...shared} onSubmit={(m) => apiChangePwd({ ...m, email: lastEmail })} autoComplete={false}>
+    <Form {...shared} onSubmit={(m) => apiChangePwd({ ...m, email: lastEmail }).then(onBack)} autoComplete={false}>
       <h2>New Password</h2>
       {/* WARN: the input is required to allow browser save new password with previously pointed email */}
       <input type="text" autoComplete="username" value={lastEmail} hidden readOnly />
