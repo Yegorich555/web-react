@@ -9,7 +9,7 @@ interface BaseControlP<T, C extends WUPBaseControl<any, any, any>> {
    * * point `''`(empty string) to partially detach (exclude from `form.$model`, `form.$isChanged`, but included in validations & submit) */
   name: NameofResult | "" | null;
   className?: string;
-  onChange?: C["$onChange"];
+  onChange?: (e: WUP.BaseControl.EventMap["$change"], c: C) => void; // C["$onChange"];
 
   initValue?: T;
   value?: T;
@@ -35,7 +35,7 @@ export default abstract class BaseControl<
     super.updateOptions(nextProps, isInit);
     this.domEl.$options.validations = nextProps.vls;
 
-    this.domEl.$onChange = nextProps.onChange;
+    this.domEl.$onChange = nextProps.onChange ? (e) => nextProps.onChange!(e as any, this.domEl) : undefined;
     if (isInit || nextProps.value !== this.props.value) {
       this.domEl.$value = nextProps.value; // update only if value changed
     }

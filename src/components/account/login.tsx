@@ -12,6 +12,7 @@ import ForgotPassword from "./forgotPassword";
 // todo animated-swap-carousel here so user can see content changes
 export default function Login() {
   const [isForgot, setShowForgot] = useState(false);
+  const [myEmail, setMyEmail] = useState<string>();
   const shared: FormProps = {
     className: styles.authForm,
     autoStore: false,
@@ -19,13 +20,18 @@ export default function Login() {
   };
 
   if (isForgot) {
-    return <ForgotPassword onBack={() => setShowForgot(false)} />;
+    return <ForgotPassword onBack={() => setShowForgot(false)} email={myEmail} />;
   }
 
   return (
     <Form {...shared} onSubmit={apiLogin}>
       <h2>Login</h2>
-      <TextControl name={nameof<ILoginModel>("email")} vls={{ required: true, email: true }} autoComplete="email" />
+      <TextControl
+        name={nameof<ILoginModel>("email")}
+        vls={{ required: true, email: true }}
+        autoComplete="username"
+        onChange={(_, c) => setMyEmail(c.$value)}
+      />
       <PasswordControl name={nameof<ILoginModel>("password")} vls={{ required: true }} autoComplete="current-password" />
 
       {/*  todo add 2FA here */}
