@@ -22,7 +22,7 @@ export default webpackMockServer.add((app) => {
   });
   app.post(api.accSignOut, (_, res) => res.json(null));
   app.post(api.accForgotPwd, (req, res) => res.json({ success: !!req.body.email }));
-  app.post(api.accChangePwd, (req, res) => {
+  app.post(api.accResetPwd, (req, res) => {
     const m = req.body as IForgotPassword;
     const isOk = m.email && m.validationCode && m.password && m.passwordConfirm;
     if (!isOk) {

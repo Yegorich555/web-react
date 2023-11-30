@@ -4,7 +4,7 @@ import { useState } from "react";
 import Btn from "@/elements/buttons/btn";
 import Btn2 from "@/elements/buttons/btn2";
 import BtnGroup from "@/elements/buttons/btnGroup";
-import { apiChangePwd, apiForgot } from "./api.request";
+import { apiForgot, apiResetPwd } from "./api.request";
 import { IForgotModel, ILoginModel } from "./api.types";
 import NewPassword from "./newPassword";
 
@@ -52,7 +52,8 @@ export default function ForgotPassword({ onBack, email, shared }: Props): JSX.El
 
   // if (step === 2) {
   return (
-    <Form {...shared} onSubmit={(m) => apiChangePwd({ ...m, email: lastEmail }).then(onBack)} autoComplete={false}>
+    // WARN: if browser saves validationCode + password then need to use split-single view where only single validationCode exists then user can go & point new password
+    <Form {...shared} onSubmit={(m) => apiResetPwd({ ...m, email: lastEmail }).then(onBack)} autoComplete={false}>
       <h2>New Password</h2>
       {/* WARN: the input is required to allow browser save new password with previously pointed email */}
       <input type="text" autoComplete="username" value={lastEmail} hidden readOnly />

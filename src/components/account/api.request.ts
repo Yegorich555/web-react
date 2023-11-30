@@ -1,8 +1,7 @@
-/* eslint-disable import/prefer-default-export */
 import http from "@/helpers/httpService";
 import api from "@/api.endpoints";
 import setupAccess from "@/setupAccess";
-import { IBaseUser, IForgotModel, ILoginModel } from "./api.types";
+import { IBaseUser, IForgotModel, IForgotPassword, ILoginModel, IUpdatePassword } from "./api.types";
 
 export async function apiGetCurrentUser(): Promise<IBaseUser | null> {
   const res = await http.get<IBaseUser>(api.accCurrent);
@@ -28,7 +27,13 @@ export async function apiForgot(m: IForgotModel): Promise<{ success: boolean }> 
   return res.data;
 }
 
-export async function apiChangePwd(m: IForgotModel): Promise<{ success: boolean }> {
-  const res = await http.post<{ success: boolean }>(api.accChangePwd, m);
+export async function apiResetPwd(m: IForgotPassword): Promise<{ success: boolean }> {
+  const res = await http.post<{ success: boolean }>(api.accResetPwd, m);
   return res.data;
+}
+
+export function apiChangePwd(m: IUpdatePassword): Promise<{ success: boolean }> {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  throw new Error("Coming soon", { m });
 }
