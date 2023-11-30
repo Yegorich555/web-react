@@ -6,23 +6,17 @@ import Btn2 from "@/elements/buttons/btn2";
 import BtnGroup from "@/elements/buttons/btnGroup";
 import { apiChangePwd, apiForgot } from "./api.request";
 import { IForgotModel, ILoginModel } from "./api.types";
-//
-import styles from "./account.scss";
 import NewPassword from "./newPassword";
 
 interface Props {
+  shared: FormProps;
   email: string | undefined;
   onBack: () => void;
 }
 
-export default function ForgotPassword({ onBack, email }: Props): JSX.Element {
+export default function ForgotPassword({ onBack, email, shared }: Props): JSX.Element {
   const [step, setStep] = useState(1);
   const [lastEmail, setEmail] = useState(email);
-  const shared: FormProps = {
-    className: styles.authForm,
-    autoStore: false,
-    // autoFocus: true,
-  };
 
   const foot = (
     <BtnGroup>

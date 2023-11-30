@@ -5,9 +5,9 @@ import CheckControl from "@/elements/controls/check";
 import { useState } from "react";
 import { apiLogin } from "./api.request";
 import { ILoginModel } from "./api.types";
+import ForgotPassword from "./forgot";
 //
 import styles from "./account.scss";
-import ForgotPassword from "./forgotPassword";
 
 // todo animated-swap-carousel here so user can see content changes
 export default function Login() {
@@ -20,7 +20,7 @@ export default function Login() {
   };
 
   if (isForgot) {
-    return <ForgotPassword onBack={() => setShowForgot(false)} email={myEmail} />;
+    return <ForgotPassword shared={shared} onBack={() => setShowForgot(false)} email={myEmail} />;
   }
 
   return (
