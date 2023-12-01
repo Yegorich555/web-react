@@ -29,7 +29,7 @@ export type BaseControlProps<
 
 export default abstract class BaseControl<
   T extends WUPBaseControl = WUPBaseControl,
-  P extends BaseControlProps = BaseControlProps,
+  P extends BaseControlProps<any, any, any> = BaseControlProps,
 > extends BaseWUP<T, P> {
   override updateOptions(nextProps: P, isInit: boolean): void {
     super.updateOptions(nextProps, isInit);
