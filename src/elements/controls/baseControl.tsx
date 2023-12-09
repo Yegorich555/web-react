@@ -17,7 +17,7 @@ interface BaseControlP<T, C extends WUPBaseControl<any, any, any>> {
 
 export type BaseControlProps<
   T = any,
-  C extends WUPBaseControl<any, any, any> = WUPBaseControl<any, any, any>,
+  C extends WUPBaseControl<any, any, any> = any,
   O extends WUP.BaseControl.Options<any, any> = WUP.BaseControl.Options<any, any>,
   // exclude some options because better to redefine it in static $defaults
 > = Partial<Omit<O, "name" | "validationRules" | "validateDebounceMs" | "validations">> &

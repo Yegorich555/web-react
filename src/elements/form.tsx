@@ -18,18 +18,7 @@ export default class Form extends BaseWUP<WUPFormElement, FormProps> {
   updateOptions(nextProps: FormProps, isInit: boolean): void {
     super.updateOptions(nextProps, isInit);
 
-    this.domEl.$onSubmit = (e) => {
-      let isPrevented = false;
-      e.preventDefault = () => {
-        isPrevented = true; // WARN: default logic doesn't work here because known issue in web-ui-pack
-      };
-      const r = nextProps.onSubmit?.call(this.domEl, e.detail.model, e);
-      if (isPrevented) {
-        // todo remove this part after web-ui-pack update
-        this.domEl.$onSubmitEnd = (ev) => ev.stopImmediatePropagation();
-      }
-      return r;
-    };
+    this.domEl.$onSubmit = (e) => nextProps.onSubmit?.call(this.domEl, e.detail.model, e);
     if (isInit || nextProps.model !== this.props.model) {
       this.domEl.$model = nextProps.model!; // update only if value changed
     }

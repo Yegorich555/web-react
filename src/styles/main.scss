@@ -53,36 +53,6 @@ button {
   }
 }
 
-wup-modal button[close] {
-  z-index: 10; // todo remove after web-ui-pack update
-}
-
 wup-form button[type="submit"] {
   margin-left: auto;
 }
-
-// todo IDEA: focus-styles OR pending
-// button[type="submit"]::after {
-//   content: "";
-//   display: block;
-//   height: 3px;
-//   width: 100%;
-//   background-color: #fff;
-//   animation: btnfocus 3s cubic-bezier(0, 0, 0.2, 1) infinite;
-//   // transform: scaleX(50%);
-//   opacity: 0.3;
-// }
-
-// @keyframes btnfocus {
-//   0% {
-//     transform: scaleX(80%);
-//   }
-
-//   50% {
-//     transform: scaleX(100%);
-//   }
-
-//   100% {
-//     transform: scaleX(80%);
-//   }
-// }
