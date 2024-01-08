@@ -1,8 +1,8 @@
 # Web React Template
 
-**Webpack** version: 5+
-**React** version: 18+
-**NodeJS** version: 18+
+- **Webpack** version: 5+
+- **React** version: 18+
+- **NodeJS** version: 18+
 
 High scalable solution for Frontend development based on [webpack-must-have](https://github.com/Yegorich555/webpack-must-have) template
 
