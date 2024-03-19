@@ -80,7 +80,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1",
-    "web-ui-pack": "^1.1.0"
+    "web-ui-pack": "^1.1.0",
     "ytech-js-extensions": "^2.0.3"
   },
   "optionalDependencies": {
