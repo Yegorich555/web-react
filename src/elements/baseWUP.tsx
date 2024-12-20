@@ -27,7 +27,7 @@ export default abstract class BaseWUP<
     Object.assign(this.domEl.$options, nextProps, { children: null });
   }
 
-  abstract goRender(props: React.ClassAttributes<HTMLDivElement> & { class?: string }): JSX.Element;
+  abstract goRender(props: React.ClassAttributes<HTMLDivElement> & { class?: string }): React.JSX.Element;
 
   renderProps(): React.ClassAttributes<HTMLDivElement> & { class?: string } {
     return {
@@ -38,7 +38,7 @@ export default abstract class BaseWUP<
     };
   }
 
-  render(): JSX.Element {
+  render(): React.JSX.Element {
     return this.goRender(this.renderProps());
   }
 }

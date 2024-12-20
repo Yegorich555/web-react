@@ -8,7 +8,7 @@ interface HttpResponse<T> extends Response {
 interface HttpReqInit extends RequestInit {
   headers?: Record<string, string>;
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 type HttpReqData = BodyInit | Record<string, any>;
 
 /** Wrapper of browser-fetch: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch */
@@ -21,7 +21,7 @@ export class HttpClient {
   };
 
   /** Returns whether it if ordinary object or another one */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   protected isPlainObject(obj: any) {
     return typeof obj === "object" && ![ReadableStream, Blob, ArrayBuffer, FormData, URLSearchParams].some((t) => obj instanceof t);
   }
@@ -40,7 +40,6 @@ export class HttpClient {
       }
     }
 
-    // eslint-disable-next-line no-param-reassign
     cfg = {
       ...HttpClient.defaults,
       method,

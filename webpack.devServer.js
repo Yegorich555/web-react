@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { merge } = require("webpack-merge");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
@@ -24,11 +23,15 @@ module.exports = (env, argv) => {
     target: "web", // force target otherwise HMR doesn't work for style-loader
     /** @type {import('webpack-dev-server').Configuration} */
     devServer: {
-      // proxy config will be remove if target is empty
-      proxy: {
-        // requires for ignoring CORS issues
-        "/api": { target: proxy, changeOrigin: true, withCredentials: true, secure: false },
-      },
+      proxy: proxy && [
+        {
+          context: ["/api"],
+          target: proxy,
+          changeOrigin: true, // requires for ignoring CORS issues
+          withCredentials: true,
+          secure: false,
+        },
+      ],
       hot: true,
       historyApiFallback: {
         // provide index.html instead of 404:not found error (for SPA app)

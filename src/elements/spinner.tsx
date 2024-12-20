@@ -8,7 +8,7 @@ interface Props extends Partial<WUP.Spin.Options> {}
 
 /** Details here: https://yegorich555.github.io/web-ui-pack/spin */
 export default class Spinner extends BaseWUP<WUPSpinElement, Props> {
-  goRender(props: Record<string, unknown>): JSX.Element {
+  goRender(props: Record<string, unknown>): React.JSX.Element {
     return <wup-spin {...props} />;
   }
 }

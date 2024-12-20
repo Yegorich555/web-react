@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-namespace */
 // import "web-ui-pack/baseElement"; // required to re-use __wupln
 
 /*

@@ -17,7 +17,7 @@ export default class Modal extends BaseWUP<WUPModalElement, Props> {
     this.domEl.$onClose = nextProps.onClose;
   }
 
-  goRender(props: Record<string, unknown>): JSX.Element {
+  goRender(props: Record<string, unknown>): React.JSX.Element {
     // https://react.dev/reference/react-dom/createPortal#reference
     return createPortal(<wup-modal {...props}>{this.props.children}</wup-modal>, document.body);
   }

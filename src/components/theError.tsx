@@ -1,6 +1,5 @@
-// eslint-disable-next-line css-modules/no-unused-class
 import stylesShared from "../styles/shared.m.scss";
-import styles from "./theError.scss";
+import * as styles from "./theError.scss";
 
 // WARN: important to handle error before component is mounted
 
@@ -34,7 +33,7 @@ window.onunhandledrejection = (e) => {
 };
 
 // WARN: The Component isn't rendered in React if something wrong with another render
-// export default function TheError(): JSX.Element | null {
+// export default function TheError(): React.JSX.Element | null {
 //   const [closed, setClosed] = useState(false);
 //   const [err, setErr] = useState("");
 

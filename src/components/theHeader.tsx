@@ -2,7 +2,7 @@ import imgLogo from "images/logo.png"; // start-path is 'images/' because we hav
 import UserImage from "@/elements/userImage";
 import { useState } from "react";
 import Modal from "@/elements/modal";
-import styles from "./theHeader.scss";
+import * as styles from "./theHeader.scss";
 import Login from "./account/login";
 
 export default function TheHeader() {

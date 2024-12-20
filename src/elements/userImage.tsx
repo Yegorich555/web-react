@@ -1,5 +1,5 @@
 import { useState } from "react";
-import styles from "./userImage.scss";
+import * as styles from "./userImage.scss";
 
 interface Props {
   firstName?: string;
@@ -7,7 +7,7 @@ interface Props {
   imgUrl?: string;
 }
 
-export default function UserImage(p: Props): JSX.Element {
+export default function UserImage(p: Props): React.JSX.Element {
   const [isError, setIsError] = useState(false);
   const isNull = !p.firstName && !p.imgUrl;
   return (

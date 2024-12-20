@@ -6,7 +6,7 @@ export interface BtnProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 /** Primary button */
-export default function Button(props: BtnProps): JSX.Element {
+export default function Button(props: BtnProps): React.JSX.Element {
   const p: BtnProps = {
     ...props,
     type: props.isSubmit ? "submit" : (props.type as "button") || "button",

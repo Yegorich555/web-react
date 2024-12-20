@@ -14,7 +14,7 @@ interface Props {
   onBack: () => void;
 }
 
-export default function ForgotPassword({ onBack, email, shared }: Props): JSX.Element {
+export default function ForgotPassword({ onBack, email, shared }: Props): React.JSX.Element {
   const [step, setStep] = useState(1);
   const [lastEmail, setEmail] = useState(email);
 

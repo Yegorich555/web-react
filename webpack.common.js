@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable @typescript-eslint/no-require-imports */
 console.clear();
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -12,14 +11,14 @@ const WebpackObsoletePlugin = require("webpack-obsolete-plugin");
 const svgToMiniDataURI = require("mini-svg-data-uri");
 const path = require("path");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const sassCompiler = require("sass");
 
 const srcPath = path.resolve(__dirname, "./src/");
 const destPath = path.resolve(__dirname, "./build/"); // ('../Api/wwwroot')
 const assetsPath = "./public";
 const filesThreshold = 8196; // (bytes) threshold for compression, url-loader plugins
 
-/* eslint-disable func-names */
-module.exports = function (env, argv) {
+module.exports = function defaultConfig(env, argv) {
   const isDevServer = env.WEBPACK_SERVE;
   const mode = argv.mode || (isDevServer ? "development" : "production");
   const isDevMode = mode !== "production";
@@ -202,9 +201,10 @@ module.exports = function (env, argv) {
             {
               loader: "sass-loader", // it compiles Sass to CSS, using Node Sass by default
               options: {
-                additionalData: '@import "variables";', // inject this import by default in each scss-file
+                additionalData: '@use "variables" as *;', // inject this import by default in each scss-file
                 sassOptions: {
-                  includePaths: [path.resolve(__dirname, "src/styles")], // using paths as root
+                  implementation: sassCompiler, // Prefer `dart-sass`, even if `sass-embedded` is available
+                  loadPaths: [path.resolve(__dirname, "src/styles")], // using paths as root: https://sass-lang.com/documentation/js-api/interfaces/options/#loadPaths
                 },
               },
             },
@@ -223,6 +223,8 @@ module.exports = function (env, argv) {
           BASE_URL: '"/"',
         },
         "global.DEV": JSON.stringify(isDevMode),
+        "global.DEBUG": JSON.stringify(false),
+        "global.VERBOSE": JSON.stringify(false),
       }),
       new CaseSensitivePathsPlugin(), // it fixes bugs between OS in caseSensitivePaths (since Windows isn't CaseSensitive but Linux is)
       new HtmlWebpackPlugin({
@@ -266,9 +268,9 @@ module.exports = function (env, argv) {
         ],
       }),
       new webpack.ProgressPlugin(), // it shows progress of building
-      new webpack.ProvidePlugin({
-        React: "react", // optional: react. it adds [import React from 'react'] as ES6 module to every file into the project
-      }),
+      // new webpack.ProvidePlugin({
+      //   // WARN: doesn't required from react19 React: "react", // optional: react. it adds [import React from 'react'] as ES6 module to every file into the project
+      // }),
       new WebpackObsoletePlugin({ isStrict: true }), // provides popup via alert-script if browser unsupported (according to .browserslistrc)
       // optional: new BundleAnalyzerPlugin() // creates bundles-map in browser https://github.com/webpack-contrib/webpack-bundle-analyzer
     ],

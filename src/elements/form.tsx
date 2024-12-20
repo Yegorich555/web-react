@@ -27,7 +27,7 @@ export default class Form extends BaseWUP<WUPFormElement, FormProps> {
     }
   }
 
-  goRender(props: Record<string, unknown>): JSX.Element {
+  goRender(props: Record<string, unknown>): React.JSX.Element {
     return (
       <wup-form {...props}>
         {this.props.children}

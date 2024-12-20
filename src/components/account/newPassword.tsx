@@ -6,7 +6,7 @@ interface Props {
   isForgot?: boolean;
 }
 
-export default function NewPassword({ isForgot }: Props): JSX.Element {
+export default function NewPassword({ isForgot }: Props): React.JSX.Element {
   return (
     <>
       {isForgot ? (

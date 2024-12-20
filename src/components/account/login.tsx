@@ -7,7 +7,7 @@ import { apiLogin } from "./api.request";
 import { ILoginModel } from "./api.types";
 import ForgotPassword from "./forgot";
 //
-import styles from "./account.scss";
+import * as styles from "./account.scss";
 
 // todo animated-swap-carousel here so user can see content changes
 export default function Login() {

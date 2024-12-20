@@ -13,6 +13,5 @@ declare global {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 // window.nameof = (v) => v as any; - not required in runtime because replaced WebpackFuncLoader
 export {};
