@@ -1,5 +1,4 @@
-$icomoon-font-path: "~fonts/icomoon/fonts";
-@import "~fonts/icomoon/style.scss";
+@use "~fonts/icomoon/style.scss";
 
 @font-face {
   font-family: "OpenSans-Regular";

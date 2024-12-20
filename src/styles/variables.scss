@@ -1,4 +1,9 @@
-@import "~fonts/icomoon/variables.scss";
+$icomoon-font-family: "icomoon";
+@use "~fonts/icomoon/variables.scss" with (
+  $icomoon-font-family: $icomoon-font-family,
+  $icomoon-font-path: "~fonts/icomoon/fonts"
+);
+@forward "~fonts/icomoon/variables.scss";
 
 $borderR: var(--border-radius);
 $baseMargin: var(--base-margin) 0;

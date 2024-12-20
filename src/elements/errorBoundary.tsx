@@ -1,9 +1,11 @@
+import { Component } from "react";
+
 interface Props extends React.PropsWithChildren {}
 interface State {
   err?: string;
 }
 /** https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary */
-export default class ErrorBoundary extends React.Component<Props, State> {
+export default class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {};
