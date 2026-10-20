@@ -157,9 +157,10 @@ export function getIsolated(eq: Equation): Term[] {
   return i > 0 ? [r[i], ...r.filter((_, j) => j !== i)] : r;
 }
 
-/** Normalize user input: unify minus chars & cyrillic 'х', remove spaces */
-function normalize(s: string): string {
-  return s.replace(/[−–—]/g, "-").replace(/[хХX]/g, "x").replace(/\s+/g, "");
+/** Normalize user input: unify minus chars & cyrillic 'х', remove spaces; returns null if spaces split operands: `2 3` */
+function normalize(s: string): string | null {
+  const v = s.replace(/[−–—]/g, "-").replace(/[хХX]/g, "x");
+  return /[\dx]\s+[\dx]/.test(v) ? null : v.replace(/\s+/g, "");
 }
 
 /** Parse expression without brackets like `23-x-5`; returns null if it's invalid */
@@ -179,8 +180,8 @@ function parseSide(s: string): Term[] | null {
 
 /** Parse equation without brackets like `23 - x - 5 = 12`; returns null if it's invalid */
 export function parseEquation(text: string): Equation | null {
-  const sides = normalize(text).split("=");
-  if (sides.length !== 2) {
+  const sides = normalize(text)?.split("=");
+  if (sides?.length !== 2) {
     return null;
   }
   const left = parseSide(sides[0]);

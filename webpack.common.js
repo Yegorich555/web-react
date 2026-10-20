@@ -39,6 +39,7 @@ module.exports = function defaultConfig(env, argv) {
       path: destPath,
       filename: "[name].js",
       chunkFilename: "[name].js",
+      asyncChunks: false, // dynamic import() is bundled into the entry otherwise its chunk isn't inlined (see InlineAssetsPlugin)
       htmlFilename: "schoolMathTest.html", // result single file (see InlineAssetsPlugin); [name] is taken from html-file name (index)
       publicPath: "/", // url that should be used for providing assets
       clean: true,

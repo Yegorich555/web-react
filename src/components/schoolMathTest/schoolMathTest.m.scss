@@ -2,6 +2,15 @@ $valid: #1e9e4a;
 $invalid: #e02424;
 $fixed: #f08c00; // valid but was invalid before
 
+// shared with js: colors of excel-export (:export is css-modules feature)
+/* stylelint-disable selector-pseudo-class-no-unknown, property-no-unknown */
+:export {
+  colorValid: $valid;
+  colorInvalid: $invalid;
+  colorFixed: $fixed;
+}
+/* stylelint-enable selector-pseudo-class-no-unknown, property-no-unknown */
+
 .toolbar {
   display: flex;
   align-items: center;

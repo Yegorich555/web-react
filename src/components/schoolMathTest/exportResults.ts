@@ -1,6 +1,8 @@
 import exportToExcel, { ExcelFontStyles, IExcelColumnMap, IExcelStyle } from "web-ui-pack/helpers/files/exportToExcel";
 import { Field, fields, RowResult } from "./mathRow";
+import { nextFileIndex } from "./storage";
 import { formatDuration, getSummary } from "./summary";
+import * as styles from "./schoolMathTest.m.scss";
 
 interface Item extends Record<Field, string> {
   /** Empty for summary row */
@@ -24,35 +26,18 @@ const mapping: IExcelColumnMap<Item>[] = [
 ];
 
 // WARN: the same objects for every cell otherwise exportToExcel re-resolves the style per cell
-const validStyle: IExcelStyle = { color: "#1e9e4a" };
-const invalidStyle: IExcelStyle = { color: "#e02424" };
+// colors are the same as in UI (see :export in scss)
+const validStyle: IExcelStyle = { color: styles.colorValid };
+const invalidStyle: IExcelStyle = { color: styles.colorInvalid };
 const summaryStyle: IExcelStyle = { fontStyle: ExcelFontStyles.bold };
 const summaryStyles: Partial<Record<keyof Item, IExcelStyle>> = {
   unwrap: { ...summaryStyle, ...validStyle },
   isolate: { ...summaryStyle, ...invalidStyle },
-  mistakes: { ...summaryStyle, color: "#f08c00" },
+  mistakes: { ...summaryStyle, color: styles.colorFixed },
 };
 
-const storageKey = "mathTest.fileIndex";
-let fileIndex = 0;
-/** Returns next index for file name: it's stored in localStorage to avoid the same names after reloading the page */
-function nextFileIndex(): number {
-  try {
-    fileIndex = Math.max(fileIndex, Number(localStorage.getItem(storageKey)) || 0);
-  } catch {
-    // storage can be blocked: use index in memory
-  }
-  ++fileIndex;
-  try {
-    localStorage.setItem(storageKey, String(fileIndex));
-  } catch {
-    // storage can be blocked: use index in memory
-  }
-  return fileIndex;
-}
-
 /** Save results of every row into excel-file `mathTest_{N}.xlsx` */
-export default function exportResults(rows: RowResult[]): Promise<Blob> {
+export default async function exportResults(rows: RowResult[]): Promise<Blob> {
   const data = rows.map<Item>((r, i) => ({
     num: i + 1,
     task: r.task.text,
@@ -79,7 +64,7 @@ export default function exportResults(rows: RowResult[]): Promise<Blob> {
 
   return exportToExcel(
     [{ name: "Раскрытие скобок", data, mapping }],
-    `mathTest_${nextFileIndex()}.xlsx`,
+    `mathTest_${await nextFileIndex()}.xlsx`,
     (_v, rowIndex, _sheetIndex, m) => {
       if (rowIndex === data.length) {
         return { style: summaryStyles[m.propName] ?? summaryStyle };

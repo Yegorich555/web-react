@@ -3,6 +3,7 @@ import "./helpers/classNames";
 import "./helpers/nameof";
 import "./helpers/lang";
 import "./helpers/myUser"; // defines window.myUser
+import "./components/theError"; // shows runtime errors & unhandled rejections; WARN: import it before rendering
 
 import ReactDOM from "react-dom/client";
 import { WUPPopupElement } from "web-ui-pack";

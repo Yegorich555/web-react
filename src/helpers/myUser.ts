@@ -3,7 +3,8 @@ import observer from "web-ui-pack/helpers/observer";
 
 /** Current user of the system; it can be changed in runtime: `myUser.isAdmin = true` OR `window.myUser = { isAdmin: true }` */
 export interface IMyUser {
-  isAdmin: boolean;
+  /** Any truthy value means admin: `true`, `1` */
+  isAdmin: boolean | number;
 }
 
 declare global {

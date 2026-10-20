@@ -28,7 +28,7 @@ window.onerror = (_e, _filename, _line, _col, err) => {
   // return true;
 };
 window.onunhandledrejection = (e) => {
-  showError(e.reason.toString());
+  showError(String(e.reason?.message ?? e.reason));
   return true; // prevent default error-report
 };
 

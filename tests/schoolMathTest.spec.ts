@@ -303,7 +303,13 @@ test("restores the whole state after page reload; refresh clears it", async ({ p
   await input(row(page, 3), "isolate").click();
   await input(row(page, 3), "isolate").pressSequentially("x = 5"); // typed but not validated yet
   const values = await getValues();
-  const sumText = await summary.innerText();
+  const mistakesText = await summary.locator("> div").nth(2).innerText();
+  /** Returns spent seconds from summary: `Потрачено 1 мин 2 сек` */
+  const getSpent = async (): Promise<number> => {
+    const [sec, min = 0] = ((await summary.locator("> div").nth(1).innerText()).match(/\d+/g) ?? []).map(Number).reverse();
+    return min * 60 + sec;
+  };
+  const spent = await getSpent();
   await page.waitForTimeout(600); // debounce of saving
 
   await page.reload();
@@ -314,7 +320,8 @@ test("restores the whole state after page reload; refresh clears it", async ({ p
   await expect(input(row(page, 1), "unwrap")).not.toBeEditable();
   await expect(cell(row(page, 2), "unwrap")).toHaveAttribute("data-state", "invalid");
   await expect(cell(row(page, 3), "isolate")).not.toHaveAttribute("data-state");
-  expect(await summary.innerText()).toBe(sumText);
+  expect(await summary.locator("> div").nth(2).innerText()).toBe(mistakesText);
+  expect(await getSpent()).toBeGreaterThanOrEqual(spent); // time of focused input is added on page closing
 
   // continue: the same wrong value isn't counted twice & fixed value is orange
   await typeAndLeave(input(row(page, 2), "unwrap"), "1 = 2");
@@ -349,4 +356,46 @@ test("time & mistakes are visible only for admin", async ({ page }) => {
   await expect(row(page, 0).locator("[data-result]")).toBeVisible();
   await expect(header).toBeVisible();
   await expect(summary).toBeVisible();
+});
+
+test("counts time of focused input when page is closed", async ({ page }) => {
+  await input(row(page, 1), "unwrap").click();
+  await page.clock.fastForward(65_000);
+  await page.reload();
+  await expect(page.locator("[data-summary] > div").nth(1)).toHaveText(/^Потрачено 1 мин \d+ сек$/);
+});
+
+test("spaces can't split numbers", async ({ page }) => {
+  const r = row(page, 20); // the last row always has 2-digit number in extra brackets
+  const { unwrap } = solve(await r.locator("> div").first().innerText());
+  await typeAndLeave(input(r, "unwrap"), unwrap.replace(/(\d)(\d)/, "$1 $2"));
+  await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "invalid");
+  await typeAndLeave(input(r, "unwrap"), unwrap.replaceAll(" ", "  "));
+  await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "fixed");
+});
+
+test("tooltips with correct values are shown only for admin", async ({ page }) => {
+  const r = row(page, 1);
+  const { unwrap, isolate, x } = solve(await r.locator("> div").first().innerText());
+  const setIsAdmin = (v: unknown): Promise<void> =>
+    page.evaluate((isAdmin) => {
+      window.myUser.isAdmin = isAdmin as number;
+    }, v);
+  const fields = ["unwrap", "isolate", "answer"] as const;
+
+  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(0);
+  await setIsAdmin(1); // any truthy value
+  await expect(cell(r, "unwrap")).toHaveAttribute("w-tooltip", unwrap);
+  await expect(cell(r, "isolate")).toHaveAttribute("w-tooltip", isolate);
+  await expect(cell(r, "answer")).toHaveAttribute("w-tooltip", `x = ${x}`);
+  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(20 * fields.length); // except example row
+  await cell(r, "isolate").hover();
+  await expect(page.locator("wup-popup").getByText(isolate)).toBeVisible();
+
+  await setIsAdmin(0); // any falsy value
+  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(0);
+  await setIsAdmin(true);
+  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(20 * fields.length);
+  await setIsAdmin(false);
+  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(0);
 });

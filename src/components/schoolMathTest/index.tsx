@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useIsAdmin } from "@/helpers/myUser";
 import { EXAMPLE_TASK, generateTask, MathTask, MAX_LEVEL } from "./equation";
 import exportResults from "./exportResults";
-import MathRow, { RowResult } from "./mathRow";
+import MathRow, { RowResult, withFocusedSpent } from "./mathRow";
 import { clearState, SavedState, saveState } from "./storage";
 import { emptyResult, formatDuration, getSummary } from "./summary";
 import * as styles from "./schoolMathTest.m.scss";
@@ -49,10 +49,13 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
   const [results, setResults] = useState(() => (isSaved ? saved.results : test.tasks.map(emptyResult)));
   /** State to restore rows: it's changed only on refresh */
   const [initials, setInitials] = useState(results);
+  /** Restored state is already stored: don't save it again */
+  const [restored] = useState(isSaved ? results : null);
+  const [isExporting, setIsExporting] = useState(false);
   const sum = getSummary(results);
   const isAdmin = useIsAdmin();
   // admin can refresh at any time; user only when all rows are completed (so everything is valid)
-  const canRefresh = isAdmin || sum.done === ROWS_COUNT;
+  const canRefresh = (isAdmin || sum.done === ROWS_COUNT) && !isExporting;
 
   /** Stable callbacks per row otherwise MathRow fires onChange on each render */
   const onRowChange = useMemo(
@@ -64,12 +67,21 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
   );
 
   useEffect(() => {
-    saveState({ tasks: test.tasks, results });
-  }, [test, results]);
+    results !== restored && saveState({ tasks: test.tasks, results });
+    // save at once if user closes/reloads page: including time of focused input that is counted only on blur
+    const onHide = (): void => saveState({ tasks: test.tasks, results: withFocusedSpent(results) }, true);
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+  }, [test, results, restored]);
 
-  const refresh = (): void => {
+  const refresh = async (): Promise<void> => {
     if (sum.done > 0) {
-      exportResults(results);
+      setIsExporting(true);
+      try {
+        await exportResults(results);
+      } finally {
+        setIsExporting(false); // WARN: results are kept if export fails (error is shown by theError)
+      }
     }
     clearState(); // the new test is saved again by effect above
     const next = generateTest();
@@ -87,7 +99,7 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
           type="button"
           onClick={refresh}
           disabled={!canRefresh}
-          w-tooltip={canRefresh ? undefined : "Доступно только если все правильно"}
+          w-tooltip={canRefresh || isExporting ? undefined : "Доступно только если все правильно"}
         >
           Обновить
         </button>
@@ -107,6 +119,7 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
             task={t}
             initial={initials[i]}
             onChange={onRowChange[i]}
+            isAdmin={isAdmin}
           />
         ))}
         <div className={cx(styles.row, styles.summary)} data-summary>
