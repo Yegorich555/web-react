@@ -3,18 +3,17 @@ console.clear();
 const webpack = require("webpack");
 const CaseSensitivePathsPlugin = require("case-sensitive-paths-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 const MinifyCssNames = require("mini-css-class-name/css-loader");
 const WebpackObsoletePlugin = require("webpack-obsolete-plugin");
 const svgToMiniDataURI = require("mini-svg-data-uri");
 const path = require("path");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const sassCompiler = require("sass");
+const InlineAssetsPlugin = require("./webpack.inlineAssets");
 
 const srcPath = path.resolve(__dirname, "./src/");
 const destPath = path.resolve(__dirname, "./build/"); // ('../Api/wwwroot')
 const assetsPath = "./public";
-const filesThreshold = 8196; // (bytes) threshold for compression, url-loader plugins
 
 module.exports = function defaultConfig(env, argv) {
   const isDevServer = env.WEBPACK_SERVE;
@@ -33,14 +32,14 @@ module.exports = function defaultConfig(env, argv) {
     },
     // entryPoint for webpack; it can be object with key-value pairs for multi build (https://webpack.js.org/concepts/entry-points/)
     // html-entry instead of HtmlWebpackPlugin: it creates *.html with injecting js and css into template (https://webpack.js.org/configuration/experiments/#experimentshtml)
-    // key 'index' instead of default 'main': devServer adds its client into each entry, so 'main.js' conflicts with output of <script src="/src/main.tsx">
-    entry: { index: path.resolve(srcPath, "index.html") },
+    // key is not default 'main': devServer adds its client into each entry, so 'main.js' conflicts with output of <script src="/src/main.tsx">
+    entry: { schoolMathTest: path.resolve(srcPath, "index.html") },
 
     output: {
       path: destPath,
       filename: "[name].js",
       chunkFilename: "[name].js",
-      htmlFilename: "[name].html", // otherwise it's taken from 'filename' (index.[contenthash].html in webpack.prod.js)
+      htmlFilename: "schoolMathTest.html", // result single file (see InlineAssetsPlugin); [name] is taken from html-file name (index)
       publicPath: "/", // url that should be used for providing assets
       clean: true,
     },
@@ -49,26 +48,7 @@ module.exports = function defaultConfig(env, argv) {
       plugins: [new TsconfigPathsPlugin({ configFile: "./tsconfig.json" })], // plugin makes mapping from tsconfig.json to webpack:alias
     },
     optimization: {
-      // config is taken from vue-cli
-      splitChunks: {
-        // for avoiding duplicated dependencies across modules
-        minChunks: 1, // Minimum number of chunks that must share a module before splitting.
-        cacheGroups: {
-          defaultVendors: {
-            name: "chunk-vendors", // move js-files from node_modules into splitted file [chunk-vendors].js
-            test: /[\\/]node_modules[\\/]/, // filtering files that should be included
-            priority: -10, // a module can belong to multiple cache groups. The optimization will prefer the cache group with a higher priority
-            chunks: "initial", // type of optimization: [initial | async | all]
-          },
-          common: {
-            name: "chunk-common", // move reusable nested js-files into splitted file [chunk-common].js
-            minChunks: 2, // minimum number of chunks that must share a module before splitting
-            priority: -20,
-            chunks: "initial",
-            reuseExistingChunk: true, // If the current chunk contains modules already split out from the main bundle, it will be reused instead of a new one being generated. This can impact the resulting file name of the chunk
-          },
-        },
-      },
+      splitChunks: false, // all js must be in single file because it's inlined into html (see InlineAssetsPlugin)
     },
     module: {
       parser: {
@@ -114,60 +94,28 @@ module.exports = function defaultConfig(env, argv) {
         // rule for images
         {
           test: /\.(png|jpe?g|gif|webp)(\?.*)?$/, // optional: optimizing images via PNGO etc.
-          type: "asset",
-          generator: {
-            filename: "images/[name][ext][query]", // [hash][ext][query]",
-          },
-          parser: {
-            // it converts images that have size less 'limit' option into inline base64-css-format
-            dataUrlCondition: {
-              maxSize: filesThreshold, // if file-size more then limit, file-loader copies one into outputPath
-            },
-          },
+          type: "asset/inline", // it converts images into inline base64-format since result must be a single html-file
         },
         // rule for svg-images
         {
           test: /\.(svg)(\?.*)?$/, // for reducing file-size: OptimizeCSSAssetsPlugin > cssnano > SVGO, that configured in webpack.prod.js
           exclude: /(fonts\\.+\.svg)(\?.*)?/,
-          type: "asset",
+          type: "asset/inline", // it converts images into inline format since result must be a single html-file
           generator: {
-            filename: "images/[name][ext][query]", // [hash][ext][query]",
             dataUrl: (content) => svgToMiniDataURI(content.toString()),
-          },
-          parser: {
-            // it converts images that have size less 'limit' option into inline base64-css-format
-            dataUrlCondition: {
-              maxSize: filesThreshold, // if file-size more then limit, file-loader copies one into outputPath
-            },
           },
         },
         // rule for fonts
         {
           test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/i,
-          type: "asset",
-          generator: {
-            filename: "fonts/[name][ext][query]", // [hash][ext][query]",
-          },
-          parser: {
-            // it converts images that have size less 'limit' option into inline base64-css-format
-            dataUrlCondition: {
-              maxSize: filesThreshold, // if file-size more then limit, file-loader copies one into outputPath
-            },
-          },
+          type: "asset/inline", // it converts fonts into inline base64-format since result must be a single html-file
         },
         // special rule for fonts in svg-format
         {
           test: /(fonts\\.+\.svg)(\?.*)?$/i, // for reducing file-size: OptimizeCSSAssetsPlugin > cssnano > SVGO, that configured in webpack.prod.js
-          type: "asset",
+          type: "asset/inline", // it converts fonts into inline format since result must be a single html-file
           generator: {
-            filename: "fonts/[name][ext][query]", // [hash][ext][query]",
             dataUrl: (content) => svgToMiniDataURI(content.toString()),
-          },
-          parser: {
-            // it converts images that have size less 'limit' option into inline base64-css-format
-            dataUrlCondition: {
-              maxSize: filesThreshold, // if file-size more then limit, file-loader copies one into outputPath
-            },
           },
         },
         // rules for style-files
@@ -230,8 +178,8 @@ module.exports = function defaultConfig(env, argv) {
       new CaseSensitivePathsPlugin(), // it fixes bugs between OS in caseSensitivePaths (since Windows isn't CaseSensitive but Linux is)
       new MiniCssExtractPlugin({
         // it extracts css-code from js into splitted file
-        filename: isDevMode ? "[name].css" : "[name].[contenthash].css",
-        chunkFilename: isDevMode ? "[id].css" : "[id].[contenthash].css",
+        filename: "[name].css", // without hash since it's inlined into html (see InlineAssetsPlugin)
+        chunkFilename: "[id].css",
       }),
       {
         // it injects css-files of MiniCssExtractPlugin into html since html-entry injects only native css (experiments.css)
@@ -245,28 +193,19 @@ module.exports = function defaultConfig(env, argv) {
             });
           }),
       },
-      // it copies files like images, fonts etc. from 'public' path to 'destPath' (since not every file will be injected into css and js)
-      new CopyWebpackPlugin({
-        patterns: [
-          {
-            from: assetsPath,
-            to: destPath,
-            toType: "dir",
-          },
-        ],
-      }),
       new webpack.ProgressPlugin(), // it shows progress of building
       // new webpack.ProvidePlugin({
       //   // WARN: doesn't required from react19 React: "react", // optional: react. it adds [import React from 'react'] as ES6 module to every file into the project
       // }),
       // WARN: html-entry injects only files of own entries so obsolete.js is added into index.html manually
       new WebpackObsoletePlugin({ isStrict: true }), // provides popup via alert-script if browser unsupported (according to .browserslistrc)
+      // it inlines js & css into html so the result is single file schoolMathTest.html; devServer doesn't need it (it breaks HMR)
+      !isDevServer && new InlineAssetsPlugin(),
       // optional: new BundleAnalyzerPlugin() // creates bundles-map in browser https://github.com/webpack-contrib/webpack-bundle-analyzer
-    ],
+    ].filter(Boolean),
   };
 
   return result;
 };
 
-module.exports.filesThreshold = filesThreshold;
 module.exports.assetsPath = assetsPath;

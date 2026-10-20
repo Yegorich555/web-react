@@ -1,0 +1,106 @@
+$valid: #1e9e4a;
+$invalid: #e02424;
+$fixed: #f08c00; // valid but was invalid before
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+
+  h1 {
+    margin-right: auto;
+    text-align: left;
+  }
+}
+
+.table {
+  font-size: 13px; // otherwise longest equations don't fit into inputs
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 13.3em 1fr 1fr 4em 6.2em;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0 0.3em;
+  border-radius: $borderR;
+
+  wup-text {
+    --ctrl-padding: 1em 0.5em; // default is `1.5em 1em 0.5em 1em` where top part is reserved for label but labels aren't used here
+    margin: 0.3em 0;
+  }
+
+  &[data-done] {
+    background: rgba($valid, 0.08);
+  }
+
+  // indication without error-message (validation is handled in mathRow.tsx on focusout)
+  [data-state="valid"] > wup-text {
+    --ctrl-border: #{$valid};
+    --ctrl-focus-border: #{$valid};
+    box-shadow: 0 0 0 2px var(--ctrl-border);
+  }
+
+  [data-state="invalid"] > wup-text {
+    --ctrl-border: #{$invalid};
+    --ctrl-focus-border: #{$invalid};
+    box-shadow: 0 0 0 2px var(--ctrl-border);
+  }
+
+  [data-state="fixed"] > wup-text {
+    --ctrl-border: #{$fixed};
+    --ctrl-focus-border: #{$fixed};
+    box-shadow: 0 0 0 2px var(--ctrl-border);
+  }
+}
+
+.header,
+.summary {
+  font-weight: bold;
+}
+
+.summary {
+  padding-top: 0.6em;
+  padding-bottom: 0.6em;
+  border-top: 1px solid $borderColor;
+
+  .spent {
+    grid-column: 2 / 5;
+  }
+
+  .valid {
+    color: $valid;
+  }
+
+  .invalid {
+    color: $invalid;
+  }
+
+  .fixed {
+    color: $fixed;
+  }
+}
+
+.task {
+  white-space: nowrap;
+}
+
+.result {
+  line-height: 1.2; // it's wrapped into 2 lines: `ошибки: 2,` + `21;4;3 сек`
+}
+
+// time & mistakes are visible only for admin (but they are included into excel)
+.table:not([data-admin]) {
+  .row {
+    grid-template-columns: 13.3em 1fr 1fr 4em;
+  }
+
+  .result,
+  .header > :last-child,
+  .summary {
+    display: none;
+  }
+}

@@ -79,6 +79,7 @@ export default defineConfig(
       "react/jsx-props-no-spreading": "off",
       "react/jsx-wrap-multilines": ["error", { arrow: true, return: true, declaration: true }],
       "react/function-component-definition": ["error", { namedComponents: "function-declaration" }],
+      "react/no-unknown-property": ["error", { ignore: ["w-tooltip"] }], // attr for WUPPopupElement.$useTooltip()
       // Other
       "unused-imports/no-unused-imports": "error",
       "require-await": "error",
@@ -105,7 +106,13 @@ export default defineConfig(
         "error",
         {
           devDependencies: [`${root}/*.config.{js,ts,mjs}`, `${root}/webpack.*{js,ts,mjs}`], // this files will be ignored from checking
-          optionalDependencies: [`${root}/eslint.config.*`, `${root}/webpack.devServer.{js,ts,mjs}`, "**/*.mock.{js,ts,mjs}"],
+          optionalDependencies: [
+            `${root}/eslint.config.*`,
+            `${root}/webpack.devServer.{js,ts,mjs}`,
+            "**/*.mock.{js,ts,mjs}",
+            `${root}/playwright.config.ts`,
+            `${root}/tests/**`,
+          ],
           peerDependencies: false,
         },
       ],

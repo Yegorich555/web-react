@@ -1,4 +1,3 @@
-@use "fontface.scss";
 @import "normalize.css";
 @import "sanitize.css";
 
@@ -8,14 +7,17 @@
   --anim-t: 300ms;
   --anim: var(--anim-t) cubic-bezier(0, 0, 0.2, 1) 0ms;
 
-  // prettier-ignore
-  font: 14px "OpenSans-Regular", sans-serif;
+  font:
+    14px system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif; // system fonts because custom ones make single html-file too big
 }
 
 body {
   color: $baseText;
   min-height: 100vh;
-  background: top / contain url(images/background.svg) no-repeat;
   background-color: $baseBg2;
 
   &::-webkit-scrollbar {
@@ -25,6 +27,8 @@ body {
 }
 
 main {
+  max-width: 720px;
+  margin: 0 auto;
   padding: var(--base-margin);
 }
 

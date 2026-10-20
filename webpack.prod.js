@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { merge } = require("webpack-merge");
-const CompressionPlugin = require("compression-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const common = require("./webpack.common");
@@ -11,17 +10,14 @@ module.exports = (env, argv) => {
   /** @type {import('webpack').Configuration} */
   const extendedConfig = {
     mode: "production",
-    // CLI-flag has priority over this value: 'npm run build-prod -- --devtool source-map' (see 'build-prod-withMap' in package.json)
+    // CLI-flag has priority over this value: 'npm run build-prod -- --devtool inline-source-map' (see 'build-prod-withMap' in package.json)
+    // WARN: use only inline-* source maps otherwise *.map files are generated beside single schoolMathTest.html
     devtool: false, // option controls how source maps are generated (affects on build speed dramatically): https://v4.webpack.js.org/configuration/devtool/
-    output: {
-      filename: "[name].[contenthash:8].js", // contenthash-this is version for avoiding browser-cache issue: user always has to get the last version of files
-      chunkFilename: "[name].[contenthash:8].js",
-    },
     performance: {
       maxEntrypointSize: 1000000, // in bytes (e.g. 1Mb)
       maxAssetSize: 1000000,
       assetFilter: function assetFilter(assetFilename) {
-        return !/(\.map$)|(fonts)|(images)/.test(assetFilename); // ignore these files from performance-hints
+        return !/\.map$/.test(assetFilename); // ignore these files from performance-hints
       },
     },
     optimization: {
@@ -50,20 +46,6 @@ module.exports = (env, argv) => {
         "...", // webpack default minimizers: it minifies html (js-files are skipped since already minified by TerserPlugin above)
       ],
     },
-    plugins: [
-      // optional: it creates brotli-compressed files in '[path].gz[query]'
-      new CompressionPlugin({
-        algorithm: "gzip",
-        filename: "[path][base].gz[query]",
-        threshold: common.filesThreshold, // (bytes). Only assets bigger than this size are processed
-      }),
-      // optional: it creates gzip-compressed files in '[path].br[query]'
-      new CompressionPlugin({
-        algorithm: "brotliCompress",
-        filename: "[path][base].br[query]",
-        threshold: common.filesThreshold, // (bytes). Only assets bigger than this size are processed
-      }),
-    ],
   };
 
   return merge(commonConfig, extendedConfig);

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { merge } = require("webpack-merge");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const webpackMockServer = require("webpack-mock-server");
 const path = require("path");
@@ -15,7 +14,6 @@ module.exports = (env, argv) => {
     devConfig.plugins.splice(devConfig.plugins.findIndex(searchFunction), 1);
   }
   // remove plugins because these aren't required for devServer
-  remove((a) => a instanceof CopyWebpackPlugin);
   remove((a) => a instanceof MiniCssExtractPlugin);
 
   /** @type {import('webpack').Configuration} */
@@ -34,10 +32,7 @@ module.exports = (env, argv) => {
       ],
       hot: true,
       historyApiFallback: {
-        // provide index.html instead of 404:not found error (for SPA app)
-        rewrites: [
-          { from: /favicon.ico/, to: "public/favicon.ico" }, // provide favicon
-        ],
+        index: "/schoolMathTest.html", // provide schoolMathTest.html instead of 404:not found error (for SPA app)
       }, // it enables HTML5 mode: https://developer.mozilla.org/en-US/docs/Web/API/History
       devMiddleware: {
         stats: {

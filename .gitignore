@@ -33,3 +33,7 @@ node_modules
 .stylelintcache
 
 tsconfig.tsbuildinfo
+
+# Playwright
+test-results/
+playwright-report/
