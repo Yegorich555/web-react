@@ -1,4 +1,5 @@
 .btnIcon {
+  cursor: pointer; // WARN: rule must be not empty otherwise sass removes it and `styles.btnIcon` is undefined
   // --icon-img: var(--wup-icon-cross);
   // --icon: #fff;
   // --icon-size: 1em;

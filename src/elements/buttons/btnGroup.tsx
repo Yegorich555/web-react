@@ -1,4 +1,4 @@
-import * as styles from "./btnGroup.scss";
+import * as styles from "./btnGroup.m.scss";
 
 /** DIV with inline style for buttons */
 export default function BtnGroup(p: React.PropsWithChildren): React.JSX.Element {

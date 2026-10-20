@@ -1,5 +1,5 @@
 import Btn, { BtnProps } from "./btn";
-import * as styles from "./btn2.scss";
+import * as styles from "./btn2.m.scss";
 
 /** Secondary button */
 export default function Btn2(props: BtnProps): React.JSX.Element {

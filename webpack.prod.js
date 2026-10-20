@@ -11,17 +11,23 @@ module.exports = (env, argv) => {
   /** @type {import('webpack').Configuration} */
   const extendedConfig = {
     mode: "production",
-    devtool: argv.sourceMap != null ? "source-map" : false, // option controls how source maps are generated (affects on build speed dramatically): https://v4.webpack.js.org/configuration/devtool/
+    // CLI-flag has priority over this value: 'npm run build-prod -- --devtool source-map' (see 'build-prod-withMap' in package.json)
+    devtool: false, // option controls how source maps are generated (affects on build speed dramatically): https://v4.webpack.js.org/configuration/devtool/
     output: {
       filename: "[name].[contenthash:8].js", // contenthash-this is version for avoiding browser-cache issue: user always has to get the last version of files
       chunkFilename: "[name].[contenthash:8].js",
     },
     performance: {
+      maxEntrypointSize: 1000000, // in bytes (e.g. 1Mb)
+      maxAssetSize: 1000000,
       assetFilter: function assetFilter(assetFilename) {
         return !/(\.map$)|(fonts)|(images)/.test(assetFilename); // ignore these files from performance-hints
       },
     },
     optimization: {
+      minimizeOptions: {
+        html: { collapseWhitespace: "smart" }, // options for webpack default html-minimizer: https://webpack.js.org/configuration/optimization/#optimizationminimizeoptions
+      },
       minimizer: [
         new TerserPlugin({
           // default webpack plugin for js-optimization which should be configured: https://v4.webpack.js.org/configuration/optimization/#optimizationminimizer
@@ -41,6 +47,7 @@ module.exports = (env, argv) => {
           },
         }),
         new CssMinimizerPlugin({}), // it minifies css and optimize it with cssnano: https://cssnano.co/guides/optimisations
+        "...", // webpack default minimizers: it minifies html (js-files are skipped since already minified by TerserPlugin above)
       ],
     },
     plugins: [

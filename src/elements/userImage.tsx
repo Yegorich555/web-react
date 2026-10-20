@@ -1,5 +1,5 @@
 import { useState } from "react";
-import * as styles from "./userImage.scss";
+import * as styles from "./userImage.m.scss";
 
 interface Props {
   firstName?: string;

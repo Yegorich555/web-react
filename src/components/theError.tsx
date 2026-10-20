@@ -1,5 +1,5 @@
-import stylesShared from "../styles/shared.m.scss";
-import * as styles from "./theError.scss";
+import * as stylesShared from "../styles/shared.m.scss";
+import * as styles from "./theError.m.scss";
 
 // WARN: important to handle error before component is mounted
 

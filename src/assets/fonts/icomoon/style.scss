@@ -4,8 +4,7 @@
   font-family: '#{$icomoon-font-family}';
   src:
     url('#{$icomoon-font-path}/#{$icomoon-font-family}.ttf?czkikm') format('truetype'),
-    url('#{$icomoon-font-path}/#{$icomoon-font-family}.woff?czkikm') format('woff'),
-    url('#{$icomoon-font-path}/#{$icomoon-font-family}.svg?czkikm##{$icomoon-font-family}') format('svg');
+    url('#{$icomoon-font-path}/#{$icomoon-font-family}.woff?czkikm') format('woff');
   font-weight: normal;
   font-style: normal;
   font-display: block;

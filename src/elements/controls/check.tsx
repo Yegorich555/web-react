@@ -1,6 +1,6 @@
 import { WUPCheckControl } from "web-ui-pack";
 import BaseControl, { BaseControlProps } from "./baseControl";
-import * as styles from "./check.scss";
+import * as styles from "./check.m.scss";
 
 WUPCheckControl.$use(); // register control in the browser
 WUPCheckControl.$defaults.reverse = true;

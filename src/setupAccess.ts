@@ -65,7 +65,7 @@ interface AccessFunc {
 }
 
 /** Add user to global window.$u + window.$acc to setup access */
-const setupAccess = <AccessFunc>function setupAccess(u: IBaseUser): void {
+const setupAccess = <AccessFunc>function setupAccessFn(u: IBaseUser): void {
   window.$u = Object.freeze(u);
   window.$acc = Object.freeze(setupAcc(u));
   (setupAccess as AccessFunc).onChange?.call(setupAccess, window.$u);

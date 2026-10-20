@@ -18,6 +18,10 @@ import routes from "./setupRoutes";
 import Page from "./elements/page";
 import Login from "./components/account/login";
 
+// UI_VERSION is injected by webpack.DefinePlugin (index.html isn't template anymore)
+(window as unknown as { app_uiVersion?: string }).app_uiVersion = process.env.UI_VERSION;
+console.log("UI version", process.env.UI_VERSION);
+
 function AppContainer(): React.JSX.Element {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_user, setUser] = useState<IBaseUser | null>(null);
