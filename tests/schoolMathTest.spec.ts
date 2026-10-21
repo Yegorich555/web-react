@@ -98,12 +98,14 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("renders example row and generated rows", async ({ page }) => {
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href", /^data:image\//); // inlined since result is single html-file
   await expect(page.locator("[data-result]")).toHaveCount(21);
   const ex = row(page, 0);
   await expect(ex.locator("> div").first()).toHaveText("23 - (x + 5) = 12");
   await expect(input(ex, "unwrap")).toHaveValue("23 - x - 5 = 12");
   await expect(input(ex, "isolate")).toHaveValue("x = 23 - 5 - 12");
-  await expect(input(ex, "answer")).toHaveValue("x = 6");
+  await expect(input(ex, "answer")).toHaveValue("6");
+  await expect(cell(ex, "answer").locator("[prefix]")).toHaveText(/^x =\s*$/); // prefix is outside of input
   await expect(ex.locator("wup-text[disabled]")).toHaveCount(3);
   await expect(ex.locator("[data-result]")).toHaveText("пример");
 
@@ -146,8 +148,8 @@ test("validates only filled inputs on focusout and counts mistakes", async ({ pa
   await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "fixed"); // valid but was mistake before
   await typeAndLeave(input(r, "isolate"), isolate);
   await expect(cell(r, "isolate")).toHaveAttribute("data-state", "valid"); // valid from the 1st attempt
-  await typeAndLeave(input(r, "answer"), String(x + 1));
-  await expect(input(r, "answer")).toHaveValue(`x = ${x + 1}`); // mask
+  await typeAndLeave(input(r, "answer"), `-${x}.5`);
+  await expect(input(r, "answer")).toHaveValue(`-${x}.5`); // any number is allowed
   await expect(cell(r, "answer")).toHaveAttribute("data-state", "invalid");
   await expect(r).not.toHaveAttribute("data-done");
   await expect(r.locator("[data-result]")).toHaveText("");
@@ -224,7 +226,7 @@ test("refresh generates new rows", async ({ page }) => {
   await expect(cell(r, "unwrap")).not.toHaveAttribute("data-state");
   await expect(r.locator("[data-result]")).toHaveText("");
   expect(await page.locator("[data-result]").locator("..").allInnerTexts()).not.toEqual(before);
-  await expect(input(row(page, 0), "answer")).toHaveValue("x = 6");
+  await expect(input(row(page, 0), "answer")).toHaveValue("6");
   await page.waitForTimeout(500);
   expect(isDownloaded).toBe(false); // no completed rows => nothing to save
 });

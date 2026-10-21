@@ -31,7 +31,7 @@ $fixed: #f08c00; // valid but was invalid before
 
 .row {
   display: grid;
-  grid-template-columns: 13.3em 1fr 1fr 4em 6.2em;
+  grid-template-columns: 13.3em 1fr 1fr 7em 6.2em; // answer: `x = -12.345`
   align-items: center;
   gap: 0.4em;
   padding: 0 0.3em;
@@ -104,7 +104,7 @@ $fixed: #f08c00; // valid but was invalid before
 // time & mistakes are visible only for admin (but they are included into excel)
 .table:not([data-admin]) {
   .row {
-    grid-template-columns: 13.3em 1fr 1fr 4em;
+    grid-template-columns: 13.3em 1fr 1fr 7em;
   }
 
   .result,

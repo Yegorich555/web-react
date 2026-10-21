@@ -12,7 +12,7 @@ const storeName = "state";
 const stateKey = "current";
 const fileIndexKey = "fileIndex";
 /** Increment it when SavedState is changed so the old data is ignored */
-const version = 1;
+const version = 2;
 /** Wait for pointed time before saving to avoid writing on each keystroke */
 const saveDebounceMs = 300;
 /** indexedDB.open() can hang forever in some browsers/webviews: fail after timeout so the app is rendered anyway */

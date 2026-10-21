@@ -94,7 +94,7 @@ module.exports = function defaultConfig(env, argv) {
         },
         // rule for images
         {
-          test: /\.(png|jpe?g|gif|webp)(\?.*)?$/, // optional: optimizing images via PNGO etc.
+          test: /\.(png|jpe?g|gif|webp|ico)(\?.*)?$/, // optional: optimizing images via PNGO etc.
           type: "asset/inline", // it converts images into inline base64-format since result must be a single html-file
         },
         // rule for svg-images

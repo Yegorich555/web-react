@@ -33,8 +33,7 @@ const validators: Record<Field, (task: MathTask, text: string) => boolean> = {
 
 /** Returns true - valid, false - invalid, undefined - empty */
 function check(task: MathTask, field: Field, text: string): boolean | undefined {
-  const isEmpty = field === "answer" ? !/\d/.test(text) : !text; // answer is masked with prefix `x = `
-  return isEmpty ? undefined : validators[field](task, text);
+  return text ? validators[field](task, text) : undefined;
 }
 
 /** Returns value of attribute [data-state] used for styling */
@@ -89,7 +88,7 @@ function MathRow({ task, isExample, initial, onChange, isAdmin }: Props): React.
   const [r, setR] = useState(first);
   // WARN: initValue must be stable otherwise control resets value on each render
   const [correct] = useState(() => getCorrectValues(task));
-  const [initValues] = useState(() => (isExample ? correct : r.values));
+  const [initValues] = useState(() => (isExample ? { ...correct, answer: String(task.x) } : r.values)); // answer has prefix `x = `
   const isDone = r.times != null;
 
   useEffect(() => {
@@ -105,8 +104,7 @@ function MathRow({ task, isExample, initial, onChange, isAdmin }: Props): React.
   };
 
   const onInput = (field: Field, v: string | undefined): void => {
-    const text = field === "answer" && !/\d/.test(v ?? "") ? "" : (v ?? ""); // answer is masked with prefix `x = `
-    setR((prev) => ({ ...prev, values: { ...prev.values, [field]: text } }));
+    setR((prev) => ({ ...prev, values: { ...prev.values, [field]: v ?? "" } }));
   };
 
   /** Show state & count mistake & complete row if everything is valid; returns validation result */
@@ -189,8 +187,8 @@ function MathRow({ task, isExample, initial, onChange, isAdmin }: Props): React.
             name={null}
             label=""
             clearButton={false}
-            mask={f === "answer" ? "x = 0#" : undefined} // WARN: tied with max root in generateTask()
-            maskholder={f === "answer" ? false : undefined}
+            // not wup-num: it declines leading `-`, ignores `,` and sets inputmode=numeric (no `-` & `.` on iOS keyboard)
+            prefix={f === "answer" ? "x = " : undefined}
             initValue={initValues[f]}
             onChange={(_e, c) => onInput(f, c.$value)}
             disabled={isExample}

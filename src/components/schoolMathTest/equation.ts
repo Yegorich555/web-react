@@ -107,7 +107,7 @@ export function generateTask(level = MAX_LEVEL): MathTask {
   for (;;) {
     const isSimple = level === 0;
     const maxNum = isSimple ? 20 : 99; // simple tasks have small numbers
-    const x = isSimple ? rnd(1, 12) : rnd(1, 40); // WARN: tied with mask of answer
+    const x = isSimple ? rnd(1, 12) : rnd(1, 40);
     const isNumBracketX = level === 3 && Math.random() < 0.5;
     const isNumBracketOther = level === 3 && !isNumBracketX;
 
@@ -230,8 +230,8 @@ export function isIsolateValid(task: MathTask, text: string): boolean {
   return toKey(numSide.map((t) => ({ v: t.v * s }))) === toKey(getIsolated(task.unwrapped));
 }
 
-/** Returns true if answer `x = 6` is correct */
+/** Returns true if answer `x = 6` is correct; any number is allowed: `x = -2`, `x = 2.34`, `x = 2,34` */
 export function isAnswerValid(task: MathTask, text: string): boolean {
-  const m = /^\s*[xхХX]?\s*=?\s*(\d+)\s*$/.exec(text);
-  return !!m && Number(m[1]) === task.x;
+  const m = /^x?=?(-?(?:\d+(?:[.,]\d*)?|[.,]\d+))$/.exec(normalize(text) ?? "");
+  return !!m && Number(m[1].replace(",", ".")) === task.x;
 }

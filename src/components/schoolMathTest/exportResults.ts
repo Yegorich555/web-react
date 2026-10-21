@@ -43,7 +43,7 @@ export default async function exportResults(rows: RowResult[]): Promise<Blob> {
     task: r.task.text,
     unwrap: r.values.unwrap ?? "",
     isolate: r.values.isolate ?? "",
-    answer: r.values.answer ?? "",
+    answer: r.values.answer ? `x = ${r.values.answer}` : "", // prefix `x = ` isn't part of input value
     isDone: r.times ? "да" : "нет",
     mistakes: r.mistakes,
     times: r.times?.join(";") ?? "",
