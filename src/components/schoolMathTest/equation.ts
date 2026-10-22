@@ -15,6 +15,8 @@ export interface MathTask {
   text: string;
   /** Correct root */
   x: number;
+  /** Complexity used by generateTask() */
+  complexity: number;
   /** Expected equation after unwrapping brackets: `23 - x - 5 = 12` */
   unwrapped: Equation;
 }
@@ -62,16 +64,17 @@ const evaluate = (terms: Term[], x: number): number => terms.reduce((sum, t) => 
 /** Returns group with single number */
 const num = (v: number): Group => ({ sign: v < 0 ? -1 : 1, terms: [{ v: Math.abs(v) }] });
 
-function createTask(left: Group[], right: Group[], x: number): MathTask {
+function createTask(left: Group[], right: Group[], x: number, complexity: number): MathTask {
   return {
     text: `${formatGroups(left)} = ${formatGroups(right)}`,
     x,
+    complexity,
     unwrapped: { left: unwrap(left), right: unwrap(right) },
   };
 }
 
 /** Example for end-user (prefilled first row): `23 - (x + 5) = 12` */
-export const EXAMPLE_TASK = createTask([num(23), { sign: -1, terms: [{ v: 1, isX: true }, { v: 5 }], isBracket: true }], [num(12)], 6);
+export const EXAMPLE_TASK = createTask([num(23), { sign: -1, terms: [{ v: 1, isX: true }, { v: 5 }], isBracket: true }], [num(12)], 6, 0);
 
 const rnd = (min: number, max: number): number => min + Math.floor(Math.random() * (max - min + 1));
 /** Returns -1 with pointed chance otherwise 1 */
@@ -91,40 +94,40 @@ const numBracket = (): Group => ({
   isBracket: true,
 });
 
-/** Max level of complexity for generateTask() */
-export const MAX_LEVEL = 3;
+/** Max complexity for generateTask() */
+export const MAX_COMPLEXITY = 3;
 
 /** Returns random task with positive integer root and different numbers
- * @param level complexity where every next level adds new feature:
+ * @param complexity every next one adds new feature:
  * * 0: like example but numbers <= 20: `17 - (x + 5) = 8`, `14 - (5 - x) = 12`
  * * 1: any order & sides: `(x - 7) + 30 = 20`, `-(14 - x) + 30 = 21`, `12 = 23 - (x + 5)`
  * * 2: 3 terms in brackets: `12 = 40 - (x + 8 - 3)`
  * * 3: extra brackets without x: `(x - 7) + 30 - (12 - 4) = 20`, `23 - (x + 5) = 30 - (12 - 4)`
  * @tutorial rules
  * * each side contains max 1 number outside brackets: `15 - 8 + (x + 19)` is useless for testing
- * * only 1 extra term per level: otherwise equation doesn't fit into inputs */
-export function generateTask(level = MAX_LEVEL): MathTask {
+ * * only 1 extra term per complexity: otherwise equation doesn't fit into inputs */
+export function generateTask(complexity = MAX_COMPLEXITY): MathTask {
   for (;;) {
-    const isSimple = level === 0;
+    const isSimple = complexity === 0;
     const maxNum = isSimple ? 20 : 99; // simple tasks have small numbers
     const x = isSimple ? rnd(1, 12) : rnd(1, 40);
-    const isNumBracketX = level === 3 && Math.random() < 0.5;
-    const isNumBracketOther = level === 3 && !isNumBracketX;
+    const isNumBracketX = complexity === 3 && Math.random() < 0.5;
+    const isNumBracketOther = complexity === 3 && !isNumBracketX;
 
     // brackets with x: (x ± b), (b ± x), (x ± b ± d), (b ± x ± d), (b ± d ± x)
-    const inner: Term[] = Array.from({ length: level === 2 ? 3 : 2 }, (_, i) => ({
+    const inner: Term[] = Array.from({ length: complexity === 2 ? 3 : 2 }, (_, i) => ({
       v: rnd(2, isSimple ? 9 : 20) * (i ? randomSign(0.5) : 1),
     }));
     const xi = rnd(0, inner.length - 1);
     inner[xi] = { v: xi ? randomSign(0.5) : 1, isX: true };
     const bracket: Group = { sign: randomSign(0.7), terms: inner, isBracket: true }; // minus before brackets is the main point of the test
     const balancer = num(0); // value is calculated below to get the pointed root
-    const xSide = level === 0 ? [balancer, bracket] : shuffle(isNumBracketX ? [bracket, balancer, numBracket()] : [bracket, balancer]);
+    const xSide = complexity === 0 ? [balancer, bracket] : shuffle(isNumBracketX ? [bracket, balancer, numBracket()] : [bracket, balancer]);
     if (xSide[0].isBracket && xSide[0].sign < 0 && Math.random() < 0.5) {
       xSide[0].sign = 1; // `-(x + 5) + 23` is allowed but less often
     }
     const other = isNumBracketOther ? [num(rnd(10, 60)), { ...numBracket(), sign: -1 }] : [num(rnd(1, isSimple ? 15 : 60))];
-    const isSwapped = level > 0 && Math.random() < (level === 1 ? 0.4 : 0.2);
+    const isSwapped = complexity > 0 && Math.random() < (complexity === 1 ? 0.4 : 0.2);
 
     const target = evaluate(unwrap(other), x);
     const v = target - evaluate(unwrap(xSide.filter((g) => g !== balancer)), x);
@@ -137,9 +140,9 @@ export function generateTask(level = MAX_LEVEL): MathTask {
       numbers.every((n) => n <= maxNum) &&
       (xSide[0].isBracket || xSide[0].sign > 0) && // avoid `-23 + ...`
       new Set(numbers).size === numbers.length && // avoid the same numbers: they can confuse
-      !(level === 1 && !isSwapped && xSide[0] === balancer) // otherwise it's the same as level 0
+      !(complexity === 1 && !isSwapped && xSide[0] === balancer) // otherwise it's the same as complexity 0
     ) {
-      return isSwapped ? createTask(other, xSide, x) : createTask(xSide, other, x);
+      return isSwapped ? createTask(other, xSide, x, complexity) : createTask(xSide, other, x, complexity);
     }
   }
 }

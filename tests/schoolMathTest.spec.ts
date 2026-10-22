@@ -6,11 +6,19 @@ import { expect, Locator, Page, test } from "@playwright/test";
 import { formatTerms, getIsolated, parseEquation } from "../src/components/schoolMathTest/equation";
 
 const url = pathToFileURL(path.resolve(__dirname, "../build/schoolMathTest.html")).href;
+/** Count of generated rows (see ROWS_COUNT in testPlan.ts) */
+const ROWS = 10;
 
-/** Returns row by index: 0 - example, 1..20 - generated tasks */
+type Field = "unwrap" | "isolate" | "answer";
+const allFields: Field[] = ["unwrap", "isolate", "answer"];
+
+/** Returns row by index: 0 - example, 1..ROWS - generated tasks */
 const row = (page: Page, i: number): Locator => page.locator("[data-result]").nth(i).locator("..");
-const cell = (r: Locator, field: "unwrap" | "isolate" | "answer"): Locator => r.locator(`[data-field="${field}"]`);
-const input = (r: Locator, field: "unwrap" | "isolate" | "answer"): Locator => cell(r, field).locator("input");
+const cell = (r: Locator, field: Field): Locator => r.locator(`[data-field="${field}"]`);
+const input = (r: Locator, field: Field): Locator => cell(r, field).locator("input");
+const taskText = (r: Locator): Promise<string> => r.locator("> div").first().innerText();
+const levelLabel = (page: Page): Locator => page.getByText(/^Ниво \d от 5$/);
+const nextBtn = (page: Page): Locator => page.getByRole("button", { name: "Нов тест" });
 
 /** Type text like user and leave input (validation is fired on focusout) */
 async function typeAndLeave(inp: Locator, text: string): Promise<void> {
@@ -44,20 +52,28 @@ function unwrapSide(side: string): string {
   return terms.join(" ").replace(/^\+ /, "").replace(/^- /, "-");
 }
 
-/** Returns correct answers for task like `23 - (x + 5) = 12` */
-function solve(task: string): { unwrap: string; isolate: string; x: number } {
+/** Returns correct values of inputs for task like `23 - (x + 5) = 12` */
+function solve(task: string): Record<Field, string> & { x: number } {
   const unwrap = task.split(" = ").map(unwrapSide).join(" = ");
   const nums = getIsolated(parseEquation(unwrap)!);
-  return { unwrap, isolate: `x = ${formatTerms(nums)}`, x: nums.reduce((sum, t) => sum + t.v, 0) };
+  const x = nums.reduce((sum, t) => sum + t.v, 0);
+  return { unwrap, isolate: `x = ${formatTerms(nums)}`, answer: String(x), x };
 }
 
-/** Type correct answers into row */
-async function solveRow(page: Page, i: number): Promise<void> {
+/** Type correct values into editable inputs of row
+ * @param mistakeIn inputs where wrong value is typed before correct one */
+async function solveRow(page: Page, i: number, fields = allFields, mistakeIn: Field[] = []): Promise<void> {
   const r = row(page, i);
-  const { unwrap, isolate, x } = solve(await r.locator("> div").first().innerText());
-  await typeAndLeave(input(r, "unwrap"), unwrap);
-  await typeAndLeave(input(r, "isolate"), isolate);
-  await typeAndLeave(input(r, "answer"), String(x));
+  const correct = solve(await taskText(r));
+  for (let k = 0; k < fields.length; ++k) {
+    const f = fields[k];
+    if (mistakeIn.includes(f)) {
+      // eslint-disable-next-line no-await-in-loop
+      await typeAndLeave(input(r, f), "1 = 2");
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await typeAndLeave(input(r, f), correct[f]);
+  }
   await expect(r).toHaveAttribute("data-done");
 }
 
@@ -83,23 +99,34 @@ const setAdmin = (page: Page, isAdmin: boolean): Promise<void> =>
     window.myUser.isAdmin = v;
   }, isAdmin);
 
-test("solves random rows of each complexity", async ({ page }) => {
-  const rows = [1, 6, 11, 16, 20]; // 1 row per each level of complexity
-  for (let k = 0; k < rows.length; ++k) {
-    // eslint-disable-next-line no-await-in-loop
-    await solveRow(page, rows[k]);
-  }
-  await expect(page.locator("[data-summary] > div")).toHaveText(["Итого", /^Потрачено (\d+ мин )?\d+ сек$/, "5 / 0 / 0"]);
-});
+/** Returns function that says if any file was downloaded since calling trackDownloads() */
+function trackDownloads(page: Page): () => boolean {
+  let isDownloaded = false;
+  page.on("download", () => {
+    isDownloaded = true;
+  });
+  return () => isDownloaded;
+}
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install(); // control time for timer checks
   await page.goto(url);
 });
 
+test("solves random rows of each complexity", async ({ page }) => {
+  const rows = [1, 4, 7, 9]; // 1 row per each complexity
+  for (let k = 0; k < rows.length; ++k) {
+    // eslint-disable-next-line no-await-in-loop
+    await solveRow(page, rows[k]);
+  }
+  await expect(page.locator("[data-summary] > div")).toHaveText(["Общо", /^Време: (\d+ мин )?\d+ сек$/, "4 / 0 / 0"]);
+});
+
 test("renders example row and generated rows", async ({ page }) => {
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href", /^data:image\//); // inlined since result is single html-file
-  await expect(page.locator("[data-result]")).toHaveCount(21);
+  await expect(page).toHaveTitle("Разкриване на скоби");
+  await expect(levelLabel(page)).toHaveText("Ниво 1 от 5");
+  await expect(page.locator("[data-result]")).toHaveCount(ROWS + 1);
   const ex = row(page, 0);
   await expect(ex.locator("> div").first()).toHaveText("23 - (x + 5) = 12");
   await expect(input(ex, "unwrap")).toHaveValue("23 - x - 5 = 12");
@@ -108,19 +135,20 @@ test("renders example row and generated rows", async ({ page }) => {
   await expect(cell(ex, "answer").locator("[prefix]")).toHaveText(/^x =\s*$/); // prefix is outside of input
   await expect(ex.locator("wup-text[disabled]")).toHaveCount(3);
   await expect(ex.locator("[data-result]")).toHaveText("пример");
+  await expect(page.locator("[data-prefilled]")).toHaveCount(0); // the 1st level: every input is editable
 
-  // first 5 rows are simple as example, other rows are more complex
+  // first 3 rows are simple as example, other rows are more complex
   const texts = await page.locator("[data-result]").locator("..").locator("> div:first-child").allInnerTexts();
   const isSimple = (s: string): boolean => /^\d+ [-+] \((x [-+] \d+|\d+ [-+] x)\) = \d+$/.test(s);
-  expect(texts.slice(1, 6).filter(isSimple)).toHaveLength(5);
-  expect(texts.slice(1, 6).every((s) => s.match(/\d+/g)!.every((n) => +n <= 20))).toBe(true); // small numbers
-  expect(texts.slice(6).filter(isSimple)).toHaveLength(0);
-  expect(texts.slice(16).every((s) => (s.match(/\(/g) || []).length === 2)).toBe(true); // last rows have 2 brackets
+  expect(texts.slice(1, 4).filter(isSimple)).toHaveLength(3);
+  expect(texts.slice(1, 4).every((s) => s.match(/\d+/g)!.every((n) => +n <= 20))).toBe(true); // small numbers
+  expect(texts.slice(4).filter(isSimple)).toHaveLength(0);
+  expect(texts.slice(9).every((s) => (s.match(/\(/g) || []).length === 2)).toBe(true); // last rows have 2 brackets
 });
 
 test("validates only filled inputs on focusout and counts mistakes", async ({ page }) => {
   const r = row(page, 1);
-  const { unwrap, isolate, x } = solve(await r.locator("> div").first().innerText());
+  const { unwrap, isolate, x } = solve(await taskText(r));
 
   // typical mistake: sign of the last bracket member isn't changed
   const wrong = unwrap.replace(/ ([-+]) (\S+) = /, (_, s: string, n: string) => ` ${flip[s]} ${n} = `);
@@ -157,21 +185,55 @@ test("validates only filled inputs on focusout and counts mistakes", async ({ pa
   await typeAndLeave(input(r, "answer"), String(x));
   await expect(r).toHaveAttribute("data-done");
   await expect(cell(r, "answer")).toHaveAttribute("data-state", "fixed");
-  await expect(page.locator("[data-summary] > div").nth(1)).toHaveText(/^Потрачено 2\d сек$/); // total time
+  await expect(page.locator("[data-summary] > div").nth(1)).toHaveText(/^Време: 2\d сек$/); // total time
   // time per input; +several sec since clock keeps going while typing
-  await expect(r.locator("[data-result]")).toHaveText(/^ошибки: 2, 2\d;\d;\d сек$/);
+  await expect(r.locator("[data-result]")).toHaveText(/^грешки: 2, 2\d;\d;\d сек$/);
   const result = await r.locator("[data-result]").innerText();
   await expect(page.locator("[data-summary] > div").nth(2)).toHaveText("0 / 1 / 2");
-  await Promise.all((["unwrap", "isolate", "answer"] as const).map((f) => expect(input(r, f)).not.toBeEditable()));
+  await Promise.all(allFields.map((f) => expect(input(r, f)).not.toBeEditable()));
 
   // timer is stopped for completed row
   await page.clock.fastForward(10_000);
   await expect(r.locator("[data-result]")).toHaveText(result);
 });
 
+test("resets validation state while typing and shows it again on Enter or focusout", async ({ page }) => {
+  const r = row(page, 1);
+  const inp = input(r, "unwrap");
+  const summary = page.locator("[data-summary] > div").nth(2);
+  await inp.click();
+  await inp.pressSequentially("1 = 2");
+  await inp.press("Enter");
+  await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "invalid");
+  await expect(summary).toHaveText("0 / 1 / 1");
+
+  await inp.pressSequentially("3"); // user continues typing
+  await expect(cell(r, "unwrap")).not.toHaveAttribute("data-state");
+  await inp.press("Enter");
+  await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "invalid");
+  await expect(summary).toHaveText("0 / 1 / 2"); // another wrong value
+
+  await inp.pressSequentially("4");
+  await expect(cell(r, "unwrap")).not.toHaveAttribute("data-state");
+  await inp.press("Backspace"); // the same text as validated before
+  await inp.press("Tab");
+  await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "invalid");
+  await expect(summary).toHaveText("0 / 1 / 2"); // the same wrong value isn't counted twice
+
+  await typeAndLeave(inp, solve(await taskText(r)).unwrap);
+  await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "fixed");
+  await inp.click();
+  await inp.press("End");
+  await inp.pressSequentially("1"); // valid state is reset too
+  await expect(cell(r, "unwrap")).not.toHaveAttribute("data-state");
+  await inp.press("Backspace");
+  await inp.press("Tab");
+  await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "fixed");
+});
+
 test("goes to next input on Enter only if value is valid", async ({ page }) => {
   const r = row(page, 1);
-  const { unwrap, isolate, x } = solve(await r.locator("> div").first().innerText());
+  const { unwrap, isolate, x } = solve(await taskText(r));
   const inp = input(r, "unwrap");
   await inp.click();
   await inp.pressSequentially("1 = 2");
@@ -196,18 +258,168 @@ test("goes to next input on Enter only if value is valid", async ({ page }) => {
   await input(r, "answer").press("Enter");
   await expect(input(row(page, 2), "unwrap")).toBeFocused(); // next row
   await expect(r).toHaveAttribute("data-done");
-  await expect(r.locator("[data-result]")).toHaveText(/^ошибки: 1, \d+;\d+;\d+ сек$/);
+  await expect(r.locator("[data-result]")).toHaveText(/^грешки: 1, \d+;\d+;\d+ сек$/);
 });
 
 test("accepts alternative forms", async ({ page }) => {
   const r = row(page, 1);
-  const { unwrap, isolate } = solve(await r.locator("> div").first().innerText());
+  const { unwrap, isolate } = solve(await taskText(r));
   const [l, rt] = unwrap.split(" = ");
   await typeAndLeave(input(r, "unwrap"), `${rt}=${l.replace(/ /g, "")}`); // swapped sides without spaces
   await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "valid");
   const [, nums] = isolate.split(" = ");
   await typeAndLeave(input(r, "isolate"), `${nums} = х`); // cyrillic 'х' at the right side
   await expect(cell(r, "isolate")).toHaveAttribute("data-state", "valid");
+});
+
+test("buttons Test & Refresh are visible only for admin", async ({ page }) => {
+  const testBtn = page.getByRole("button", { name: "Test", exact: true });
+  const refreshBtn = page.getByRole("button", { name: "Refresh" });
+  expect(await page.evaluate(() => window.myUser.isAdmin)).toBe(false); // prod-build: isAdmin is false by default
+  await expect(testBtn).toHaveCount(0);
+  await expect(refreshBtn).toHaveCount(0);
+  await setAdmin(page, true);
+  await expect(testBtn).toBeVisible();
+  await expect(refreshBtn).toBeEnabled();
+  await page.evaluate(() => {
+    window.myUser = {} as typeof window.myUser; // partial object: isAdmin is false by default
+  });
+  await expect(testBtn).toHaveCount(0);
+  await expect(refreshBtn).toHaveCount(0);
+  await page.evaluate(() => {
+    window.myUser = { isAdmin: 1 }; // any truthy value
+  });
+  await expect(refreshBtn).toBeVisible();
+});
+
+test("button 'Нов тест' is enabled only for admin or when all rows are completed", async ({ page }) => {
+  test.setTimeout(60_000);
+  const btn = nextBtn(page);
+  await expect(btn).toBeDisabled();
+  await btn.hover({ force: true });
+  await expect(page.locator("wup-popup")).toHaveText("Достъпно само когато всичко е вярно"); // tooltip for disabled button
+  await page.mouse.move(0, 0);
+  await setAdmin(page, true);
+  await expect(btn).toBeEnabled();
+  await setAdmin(page, false);
+  await expect(btn).toBeDisabled();
+
+  for (let i = 1; i <= ROWS; ++i) {
+    // eslint-disable-next-line no-await-in-loop
+    await solveRow(page, i);
+    // eslint-disable-next-line no-await-in-loop
+    await expect(btn).toBeEnabled({ enabled: i === ROWS });
+  }
+  await expect(btn).toHaveAttribute("w-tooltip", "Преминаване към ниво 2"); // everything is correct => every input is editable
+
+  const isDownloaded = trackDownloads(page);
+  await btn.click();
+  await expect(levelLabel(page)).toHaveText("Ниво 2 от 5");
+  await expect(page.locator("[data-prefilled]")).toHaveCount(0);
+  await expect(input(row(page, 1), "unwrap")).toHaveValue("");
+  await expect(btn).toBeDisabled();
+  await page.waitForTimeout(500);
+  expect(isDownloaded()).toBe(false); // results are saved only when the last level is finished
+});
+
+test("learned columns are prefilled & readonly at the next level", async ({ page }) => {
+  test.setTimeout(60_000);
+  for (let i = 1; i <= ROWS; ++i) {
+    // eslint-disable-next-line no-await-in-loop
+    await solveRow(page, i, allFields, ["unwrap"]); // mistakes only in the 1st column
+  }
+  await expect(nextBtn(page)).toHaveAttribute("w-tooltip", "Преминаване към ниво 2, упражнение: Разкрийте скобите");
+  await nextBtn(page).click();
+  await expect(levelLabel(page)).toHaveText("Ниво 2 от 5");
+
+  await expect(page.locator("[data-prefilled]")).toHaveCount(ROWS * 2); // except example row
+  const r = row(page, 1);
+  const correct = solve(await taskText(r));
+  await expect(cell(r, "unwrap")).not.toHaveAttribute("data-prefilled");
+  await expect(input(r, "unwrap")).toHaveValue("");
+  await expect(input(r, "unwrap")).toBeEditable();
+  await Promise.all(
+    (["isolate", "answer"] as const).flatMap((f) => [
+      expect(cell(r, f)).toHaveAttribute("data-prefilled"),
+      expect(input(r, f)).toHaveValue(correct[f]),
+      expect(input(r, f)).not.toBeEditable(),
+    ]),
+  );
+
+  // admin: tooltips with correct values only for editable inputs
+  await setAdmin(page, true);
+  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(ROWS);
+  await expect(cell(r, "unwrap")).toHaveAttribute("w-tooltip", correct.unwrap);
+
+  // row is completed when editable inputs are valid; Enter skips prefilled inputs
+  await input(r, "unwrap").click();
+  await input(r, "unwrap").pressSequentially(correct.unwrap);
+  await input(r, "unwrap").press("Enter");
+  await expect(input(row(page, 2), "unwrap")).toBeFocused();
+  await expect(r).toHaveAttribute("data-done");
+  await expect(r.locator("[data-result]")).toHaveText(/^грешки: 0, \d+ сек$/); // time only for editable input
+});
+
+test("saves all levels into excel when the last level is finished", async ({ page }) => {
+  const isDownloaded = trackDownloads(page);
+  await setAdmin(page, true); // admin can go to the next level at any time
+  for (let level = 2; level <= 5; ++level) {
+    // eslint-disable-next-line no-await-in-loop
+    await nextBtn(page).click();
+    // eslint-disable-next-line no-await-in-loop
+    await expect(levelLabel(page)).toHaveText(`Ниво ${level} от 5`);
+  }
+  expect(isDownloaded()).toBe(false);
+
+  const testBtn = page.getByRole("button", { name: "Test", exact: true });
+  const [download] = await Promise.all([page.waitForEvent("download"), testBtn.click()]); // fill all rows => the last level is finished
+  expect(download.suggestedFilename()).toBe("mathTest_1.xlsx");
+  const text = readZipText(readFileSync((await download.path())!));
+  for (let level = 1; level <= 5; ++level) {
+    expect(text).toContain(`Ниво ${level}`); // 1 sheet per level
+  }
+  expect(text).toContain(`Общо, ниво 5`);
+  expect(text).toContain(`${ROWS} от ${ROWS}`);
+  await expect(page.locator("[data-done]")).toHaveCount(ROWS);
+
+  // it isn't saved again after page reload or filling again
+  let downloads = 0;
+  page.on("download", () => ++downloads);
+  await testBtn.click();
+  await page.waitForTimeout(600); // debounce of saving
+  await page.reload();
+  await expect(levelLabel(page)).toHaveText("Ниво 5 от 5");
+  await expect(page.locator("[data-done]")).toHaveCount(ROWS);
+  await page.waitForTimeout(500);
+  expect(downloads).toBe(0);
+
+  // the next test starts new round
+  await expect(nextBtn(page)).toHaveAttribute("w-tooltip", "Нов кръг от ниво 1");
+  await nextBtn(page).click();
+  await expect(levelLabel(page)).toHaveText("Ниво 1 от 5");
+  await expect(page.locator("[data-done]")).toHaveCount(0);
+  await page.waitForTimeout(500);
+  expect(downloads).toBe(0);
+});
+
+test("button Test fills all rows with simulated mistakes on every click", async ({ page }) => {
+  await setAdmin(page, true);
+  const testBtn = page.getByRole("button", { name: "Test", exact: true });
+  const summary = page.locator("[data-summary] > div").nth(2);
+  await testBtn.click();
+  await expect(page.locator("[data-done]")).toHaveCount(ROWS);
+  await expect(page.locator("[data-state=invalid]")).toHaveCount(0); // mistakes are fixed
+  const [valid, withMistakes] = (await summary.innerText()).split(" / ").map(Number);
+  expect(valid + withMistakes).toBe(ROWS);
+  const values = await page.locator("[data-field] input").evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
+  expect(values.slice(3).every(Boolean)).toBe(true); // every input is filled
+
+  // every click overrides previous results: time per row is random
+  const results = page.locator("[data-result]");
+  const before = await results.allInnerTexts();
+  await testBtn.click();
+  await expect(page.locator("[data-done]")).toHaveCount(ROWS);
+  await expect.poll(() => results.allInnerTexts()).not.toEqual(before);
 });
 
 test("refresh generates new rows", async ({ page }) => {
@@ -217,63 +429,31 @@ test("refresh generates new rows", async ({ page }) => {
   await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "invalid");
   const before = await page.locator("[data-result]").locator("..").allInnerTexts();
 
-  let isDownloaded = false;
-  page.on("download", () => {
-    isDownloaded = true;
-  });
-  await page.getByRole("button", { name: "Обновить" }).click();
+  const isDownloaded = trackDownloads(page);
+  await page.getByRole("button", { name: "Refresh" }).click();
   await expect(input(r, "unwrap")).toHaveValue("");
   await expect(cell(r, "unwrap")).not.toHaveAttribute("data-state");
   await expect(r.locator("[data-result]")).toHaveText("");
   expect(await page.locator("[data-result]").locator("..").allInnerTexts()).not.toEqual(before);
   await expect(input(row(page, 0), "answer")).toHaveValue("6");
+  await expect(levelLabel(page)).toHaveText("Ниво 1 от 5"); // the same level
   await page.waitForTimeout(500);
-  expect(isDownloaded).toBe(false); // no completed rows => nothing to save
-});
-
-test("refresh is enabled only for admin or when all rows are completed", async ({ page }) => {
-  test.setTimeout(60_000);
-  const btn = page.getByRole("button", { name: "Обновить" });
-  await expect(btn).toBeDisabled(); // window.myUser = { isAdmin: false } by default
-  expect(await page.evaluate(() => window.myUser.isAdmin)).toBe(false);
-  await btn.hover({ force: true });
-  await expect(page.locator("wup-popup")).toHaveText("Доступно только если все правильно"); // tooltip for disabled button
-  await page.mouse.move(0, 0);
-  await setAdmin(page, true);
-  await expect(btn).toBeEnabled();
-  await expect(btn).not.toHaveAttribute("w-tooltip"); // tooltip only for disabled button
-  await setAdmin(page, false);
-  await expect(btn).toBeDisabled();
-  await page.evaluate(() => {
-    window.myUser = { isAdmin: true };
-  });
-  await expect(btn).toBeEnabled();
-  await page.evaluate(() => {
-    window.myUser = {} as typeof window.myUser; // partial object: isAdmin is false by default
-  });
-  await expect(btn).toBeDisabled();
-  expect(await page.evaluate(() => window.myUser.isAdmin)).toBe(false);
-
-  for (let i = 1; i <= 20; ++i) {
-    // eslint-disable-next-line no-await-in-loop
-    await solveRow(page, i);
-    // eslint-disable-next-line no-await-in-loop
-    await expect(btn).toBeEnabled({ enabled: i === 20 });
-  }
+  expect(isDownloaded()).toBe(false); // no completed rows => nothing to save
 });
 
 test("saves rows into excel on refresh if at least 1 row is completed", async ({ page }) => {
   await setAdmin(page, true);
-  const task1 = await row(page, 1).locator("> div").first().innerText();
+  const task1 = await taskText(row(page, 1));
   await solveRow(page, 1);
   await typeAndLeave(input(row(page, 2), "unwrap"), "1 = 2");
   const summary = page.locator("[data-summary] > div");
-  await expect(summary).toHaveText(["Итого", /^Потрачено \d+ сек$/, "1 / 1 / 1"]);
+  await expect(summary).toHaveText(["Общо", /^Време: \d+ сек$/, "1 / 1 / 1"]);
 
-  const btn = page.getByRole("button", { name: "Обновить" });
+  const btn = page.getByRole("button", { name: "Refresh" });
   let [download] = await Promise.all([page.waitForEvent("download"), btn.click()]);
   expect(download.suggestedFilename()).toBe("mathTest_1.xlsx");
   const text = readZipText(readFileSync((await download.path())!));
+  expect(text).toContain("Ниво 1"); // sheet name
   expect(text).toContain(task1);
   expect(text).toContain("1 = 2"); // invalid values are saved too
   expect(text).toContain("Решено");
@@ -281,16 +461,16 @@ test("saves rows into excel on refresh if at least 1 row is completed", async ({
   expect(text.toUpperCase()).toContain("1E9E4A"); // green font for valid inputs
   expect(text.toUpperCase()).toContain("E02424"); // red font for invalid inputs
   // summary row: row 1 is solved without mistakes, row 2 has 1 mistake
-  expect(text).toContain("Итого");
-  expect(text).toContain("без ошибок: 1");
-  expect(text).toContain("Потрачено ");
-  expect(text).toContain("с ошибками: 1");
-  expect(text).toContain("1 из 20");
+  expect(text).toContain("Общо, ниво 1");
+  expect(text).toContain("без грешки: 1");
+  expect(text).toContain("Време: ");
+  expect(text).toContain("с грешки: 1");
+  expect(text).toContain(`1 от ${ROWS}`);
 
   await solveRow(page, 1);
   [download] = await Promise.all([page.waitForEvent("download"), btn.click()]);
   expect(download.suggestedFilename()).toBe("mathTest_2.xlsx");
-  await expect(summary).toHaveText(["Итого", "Потрачено 0 сек", "0 / 0 / 0"]); // reset by refresh
+  await expect(summary).toHaveText(["Общо", "Време: 0 сек", "0 / 0 / 0"]); // reset by refresh
 });
 
 test("restores the whole state after page reload; refresh clears it", async ({ page }) => {
@@ -306,7 +486,7 @@ test("restores the whole state after page reload; refresh clears it", async ({ p
   await input(row(page, 3), "isolate").pressSequentially("x = 5"); // typed but not validated yet
   const values = await getValues();
   const mistakesText = await summary.locator("> div").nth(2).innerText();
-  /** Returns spent seconds from summary: `Потрачено 1 мин 2 сек` */
+  /** Returns spent seconds from summary: `Време: 1 мин 2 сек` */
   const getSpent = async (): Promise<number> => {
     const [sec, min = 0] = ((await summary.locator("> div").nth(1).innerText()).match(/\d+/g) ?? []).map(Number).reverse();
     return min * 60 + sec;
@@ -318,7 +498,7 @@ test("restores the whole state after page reload; refresh clears it", async ({ p
   expect(await getTasks()).toEqual(tasks);
   expect(await getValues()).toEqual(values);
   await expect(row(page, 1)).toHaveAttribute("data-done");
-  await expect(row(page, 1).locator("[data-result]")).toHaveText(/^ошибки: 0, \d+;\d+;\d+ сек$/);
+  await expect(row(page, 1).locator("[data-result]")).toHaveText(/^грешки: 0, \d+;\d+;\d+ сек$/);
   await expect(input(row(page, 1), "unwrap")).not.toBeEditable();
   await expect(cell(row(page, 2), "unwrap")).toHaveAttribute("data-state", "invalid");
   await expect(cell(row(page, 3), "isolate")).not.toHaveAttribute("data-state");
@@ -333,7 +513,7 @@ test("restores the whole state after page reload; refresh clears it", async ({ p
 
   // refresh clears storage: the new test is stored instead
   await setAdmin(page, true);
-  await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Обновить" }).click()]);
+  await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Refresh" }).click()]);
   const fresh = await getTasks();
   expect(fresh).not.toEqual(tasks);
   await page.waitForTimeout(600);
@@ -343,15 +523,35 @@ test("restores the whole state after page reload; refresh clears it", async ({ p
   await expect(summary.locator("> div").nth(2)).toHaveText("0 / 0 / 0");
 });
 
-test("time & mistakes are visible only for admin", async ({ page }) => {
-  const header = page.getByText("Время и ошибки");
+test("restores level & prefilled columns after page reload", async ({ page }) => {
+  test.setTimeout(60_000);
+  for (let i = 1; i <= ROWS; ++i) {
+    // eslint-disable-next-line no-await-in-loop
+    await solveRow(page, i, allFields, ["answer"]);
+  }
+  await nextBtn(page).click();
+  await expect(levelLabel(page)).toHaveText("Ниво 2 от 5");
+  await solveRow(page, 1, ["answer"]);
+  await page.waitForTimeout(600); // debounce of saving
+
+  await page.reload();
+  await expect(levelLabel(page)).toHaveText("Ниво 2 от 5");
+  await expect(page.locator("[data-prefilled]")).toHaveCount(ROWS * 2);
+  await expect(cell(row(page, 2), "answer")).not.toHaveAttribute("data-prefilled");
+  await expect(row(page, 1)).toHaveAttribute("data-done");
+  await expect(page.locator("[data-done]")).toHaveCount(1);
+});
+
+test("time & mistakes per row are visible only for admin; summary is visible for everyone", async ({ page }) => {
+  const header = page.getByText("Време и грешки");
   const summary = page.locator("[data-summary]");
   await solveRow(page, 1);
-  await expect(row(page, 1).locator("[data-result]")).toHaveText(/^ошибки: 0, /); // it's calculated but hidden
+  await expect(row(page, 1).locator("[data-result]")).toHaveText(/^грешки: 0, /); // it's calculated but hidden
   await expect(row(page, 1).locator("[data-result]")).toBeHidden();
   await expect(row(page, 0).locator("[data-result]")).toBeHidden();
   await expect(header).toBeHidden();
-  await expect(summary).toBeHidden();
+  await expect(summary).toBeVisible();
+  await expect(summary.locator("> div")).toHaveText(["Общо", /^Време: \d+ сек$/, "1 / 0 / 0"]);
 
   await setAdmin(page, true);
   await expect(row(page, 1).locator("[data-result]")).toBeVisible();
@@ -364,12 +564,12 @@ test("counts time of focused input when page is closed", async ({ page }) => {
   await input(row(page, 1), "unwrap").click();
   await page.clock.fastForward(65_000);
   await page.reload();
-  await expect(page.locator("[data-summary] > div").nth(1)).toHaveText(/^Потрачено 1 мин \d+ сек$/);
+  await expect(page.locator("[data-summary] > div").nth(1)).toHaveText(/^Време: 1 мин \d+ сек$/);
 });
 
 test("spaces can't split numbers", async ({ page }) => {
-  const r = row(page, 20); // the last row always has 2-digit number in extra brackets
-  const { unwrap } = solve(await r.locator("> div").first().innerText());
+  const r = row(page, ROWS); // the last row always has 2-digit number in extra brackets
+  const { unwrap } = solve(await taskText(r));
   await typeAndLeave(input(r, "unwrap"), unwrap.replace(/(\d)(\d)/, "$1 $2"));
   await expect(cell(r, "unwrap")).toHaveAttribute("data-state", "invalid");
   await typeAndLeave(input(r, "unwrap"), unwrap.replaceAll(" ", "  "));
@@ -378,26 +578,25 @@ test("spaces can't split numbers", async ({ page }) => {
 
 test("tooltips with correct values are shown only for admin", async ({ page }) => {
   const r = row(page, 1);
-  const { unwrap, isolate, x } = solve(await r.locator("> div").first().innerText());
+  const { unwrap, isolate, x } = solve(await taskText(r));
   const setIsAdmin = (v: unknown): Promise<void> =>
     page.evaluate((isAdmin) => {
       window.myUser.isAdmin = isAdmin as number;
     }, v);
-  const fields = ["unwrap", "isolate", "answer"] as const;
 
   await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(0);
   await setIsAdmin(1); // any truthy value
   await expect(cell(r, "unwrap")).toHaveAttribute("w-tooltip", unwrap);
   await expect(cell(r, "isolate")).toHaveAttribute("w-tooltip", isolate);
   await expect(cell(r, "answer")).toHaveAttribute("w-tooltip", `x = ${x}`);
-  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(20 * fields.length); // except example row
+  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(ROWS * allFields.length); // except example row
   await cell(r, "isolate").hover();
   await expect(page.locator("wup-popup").getByText(isolate)).toBeVisible();
 
   await setIsAdmin(0); // any falsy value
   await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(0);
   await setIsAdmin(true);
-  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(20 * fields.length);
+  await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(ROWS * allFields.length);
   await setIsAdmin(false);
   await expect(page.locator("[data-field][w-tooltip]")).toHaveCount(0);
 });

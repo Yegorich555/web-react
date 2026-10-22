@@ -5,7 +5,12 @@ import { emptyResult } from "./summary";
 import * as styles from "./schoolMathTest.m.scss";
 
 export type Field = "unwrap" | "isolate" | "answer";
-export const fields: Field[] = ["unwrap", "isolate", "answer"];
+export const allFields: Field[] = ["unwrap", "isolate", "answer"];
+export const fieldTitles: Record<Field, string> = {
+  unwrap: "Разкрийте скобите",
+  isolate: "Оставете x от едната страна",
+  answer: "Отговор",
+};
 
 /** Current state of row: it's enough to restore row after page reload */
 export interface RowResult {
@@ -21,7 +26,7 @@ export interface RowResult {
   mistakes: number;
   /** Ms spent per input (sum of all focus periods) */
   spent: Partial<Record<Field, number>>;
-  /** Seconds spent per input; defined only when row is completed */
+  /** Seconds spent per editable input; defined only when row is completed */
   times?: number[];
 }
 
@@ -32,7 +37,7 @@ const validators: Record<Field, (task: MathTask, text: string) => boolean> = {
 };
 
 /** Returns true - valid, false - invalid, undefined - empty */
-function check(task: MathTask, field: Field, text: string): boolean | undefined {
+export function check(task: MathTask, field: Field, text: string): boolean | undefined {
   return text ? validators[field](task, text) : undefined;
 }
 
@@ -48,7 +53,7 @@ function getStateAttr(isValid: boolean | undefined, hadMistake: boolean | undefi
 }
 
 /** Returns correct values: prefilled for example row & tooltips for admin */
-function getCorrectValues(task: MathTask): Record<Field, string> {
+export function getCorrectValues(task: MathTask): Record<Field, string> {
   const { left, right } = task.unwrapped;
   return {
     unwrap: `${formatTerms(left)} = ${formatTerms(right)}`,
@@ -73,6 +78,8 @@ export function withFocusedSpent(results: RowResult[]): RowResult[] {
 
 interface Props {
   task: MathTask;
+  /** Editable inputs: row is completed when all of them are valid; others are prefilled with correct values & readonly */
+  fields: Field[];
   /** Row with prefilled values in disabled mode */
   isExample?: boolean;
   /** State to restore row (after page reload) */
@@ -83,13 +90,16 @@ interface Props {
   isAdmin?: boolean;
 }
 
-function MathRow({ task, isExample, initial, onChange, isAdmin }: Props): React.JSX.Element {
+function MathRow({ task, fields, isExample, initial, onChange, isAdmin }: Props): React.JSX.Element {
   const [first] = useState<RowResult>(() => initial ?? emptyResult(task));
   const [r, setR] = useState(first);
   // WARN: initValue must be stable otherwise control resets value on each render
   const [correct] = useState(() => getCorrectValues(task));
-  const [initValues] = useState(() => (isExample ? { ...correct, answer: String(task.x) } : r.values)); // answer has prefix `x = `
+  const [prefilled] = useState(() => ({ ...correct, answer: String(task.x) })); // answer has prefix `x = `
+  const [initValues] = useState(r.values);
   const isDone = r.times != null;
+  /** Returns true if input isn't editable so it isn't validated & time isn't counted */
+  const isLocked = (field: Field): boolean => isDone || !!isExample || !fields.includes(field);
 
   useEffect(() => {
     // skip initial state: parent already has it
@@ -97,14 +107,24 @@ function MathRow({ task, isExample, initial, onChange, isAdmin }: Props): React.
   }, [r, first, isExample, onChange]);
 
   const onFocus = (field: Field): void => {
-    if (isDone || isExample) {
+    if (isLocked(field)) {
       return;
     }
     focused = { task: task.text, field, at: Date.now() };
   };
 
+  /** Store value & reset validation state while user is typing: it's shown again on focusout or Enter */
   const onInput = (field: Field, v: string | undefined): void => {
-    setR((prev) => ({ ...prev, values: { ...prev.values, [field]: v ?? "" } }));
+    setR((prev) => {
+      const text = v ?? "";
+      // WARN: $change is fired async so it can come after Enter with the same text that is already validated
+      const isEdited = prev.checked[field] !== text.trim();
+      return {
+        ...prev,
+        values: { ...prev.values, [field]: text },
+        states: isEdited ? { ...prev.states, [field]: undefined } : prev.states,
+      };
+    });
   };
 
   /** Show state & count mistake & complete row if everything is valid; returns validation result */
@@ -130,7 +150,7 @@ function MathRow({ task, isExample, initial, onChange, isAdmin }: Props): React.
 
   const onBlur = (field: Field, e: React.FocusEvent): void => {
     const f = focused;
-    if (isDone || isExample || f?.task !== task.text || f.field !== field) {
+    if (isLocked(field) || f?.task !== task.text || f.field !== field) {
       return;
     }
     focused = undefined;
@@ -140,7 +160,7 @@ function MathRow({ task, isExample, initial, onChange, isAdmin }: Props): React.
   /** Go to next input on Enter if value is valid otherwise show error (since input is dirty) */
   const onKeyDown = (field: Field, e: React.KeyboardEvent): void => {
     const el = e.target as HTMLInputElement;
-    if (e.key !== "Enter" || isDone || isExample) {
+    if (e.key !== "Enter" || isLocked(field)) {
       return;
     }
     const text = el.value.trim();
@@ -165,37 +185,41 @@ function MathRow({ task, isExample, initial, onChange, isAdmin }: Props): React.
   if (isExample) {
     result = "пример";
   } else if (r.times) {
-    result = `ошибки: ${r.mistakes}, ${r.times.join(";")} сек`; // result is shown only when row is completed
+    result = `грешки: ${r.mistakes}, ${r.times.join(";")} сек`; // result is shown only when row is completed
   }
 
   return (
     <div className={styles.row} data-done={isDone || undefined}>
       <div className={styles.task}>{task.text}</div>
-      {fields.map((f) => (
-        // events are bubbled from <input/> inside wup-text so div isn't interactive itself
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div
-          key={f}
-          data-field={f}
-          data-state={getStateAttr(r.states[f], r.hadMistakes[f])}
-          w-tooltip={isAdmin && !isExample ? correct[f] : undefined} // example row already shows correct values
-          onFocus={() => onFocus(f)}
-          onBlur={(e) => onBlur(f, e)}
-          onKeyDown={(e) => onKeyDown(f, e)}
-        >
-          <TextControl
-            name={null}
-            label=""
-            clearButton={false}
-            // not wup-num: it declines leading `-`, ignores `,` and sets inputmode=numeric (no `-` & `.` on iOS keyboard)
-            prefix={f === "answer" ? "x = " : undefined}
-            initValue={initValues[f]}
-            onChange={(_e, c) => onInput(f, c.$value)}
-            disabled={isExample}
-            readOnly={isDone}
-          />
-        </div>
-      ))}
+      {allFields.map((f) => {
+        const isPrefilled = !isExample && !fields.includes(f); // column is already learned
+        return (
+          // events are bubbled from <input/> inside wup-text so div isn't interactive itself
+          // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+          <div
+            key={f}
+            data-field={f}
+            data-state={getStateAttr(r.states[f], r.hadMistakes[f])}
+            data-prefilled={isPrefilled || undefined}
+            w-tooltip={isAdmin && !isExample && !isPrefilled ? correct[f] : undefined} // prefilled inputs already show correct values
+            onFocus={() => onFocus(f)}
+            onBlur={(e) => onBlur(f, e)}
+            onKeyDown={(e) => onKeyDown(f, e)}
+          >
+            <TextControl
+              name={null}
+              label=""
+              clearButton={false}
+              // not wup-num: it declines leading `-`, ignores `,` and sets inputmode=numeric (no `-` & `.` on iOS keyboard)
+              prefix={f === "answer" ? "x = " : undefined}
+              initValue={isExample || isPrefilled ? prefilled[f] : initValues[f]}
+              onChange={(_e, c) => onInput(f, c.$value)}
+              disabled={isExample}
+              readOnly={isDone || isPrefilled}
+            />
+          </div>
+        );
+      })}
       <div className={styles.result} data-result>
         {result}
       </div>

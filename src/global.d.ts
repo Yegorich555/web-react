@@ -1,5 +1,5 @@
-/** Global constant used to DEBUG (webpack sets `true` for prod-build) */
-declare const DEV: boolean;
+/** Global constant used to DEBUG: use it as `global.DEV` (webpack sets `true` for dev-build); WARN: `var` is required for access via `global` */
+declare var DEV: boolean;
 
 /** Global page interface used on API side  */
 interface IPage {

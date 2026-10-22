@@ -1,10 +1,21 @@
 import { MathTask } from "./equation";
-import type { RowResult } from "./mathRow";
+import type { Field, RowResult } from "./mathRow";
+
+/** Results of the test of pointed level */
+export interface LevelResult {
+  level: number;
+  /** Editable columns */
+  fields: Field[];
+  results: RowResult[];
+}
 
 /** Whole state of the test that is enough to continue after page reload */
-export interface SavedState {
+export interface SavedState extends LevelResult {
   tasks: MathTask[];
-  results: RowResult[];
+  /** Results of previous levels of the current round: all levels are exported together when the last level is finished */
+  history: LevelResult[];
+  /** All levels of the current round are already exported */
+  isExported: boolean;
 }
 
 const dbName = "schoolMathTest";
@@ -12,7 +23,7 @@ const storeName = "state";
 const stateKey = "current";
 const fileIndexKey = "fileIndex";
 /** Increment it when SavedState is changed so the old data is ignored */
-const version = 2;
+const version = 4;
 /** Wait for pointed time before saving to avoid writing on each keystroke */
 const saveDebounceMs = 300;
 /** indexedDB.open() can hang forever in some browsers/webviews: fail after timeout so the app is rendered anyway */

@@ -1,6 +1,9 @@
 $valid: #1e9e4a;
 $invalid: #e02424;
 $fixed: #f08c00; // valid but was invalid before
+$prefilled: #8a8a8a; // correct value of learned column
+$taskWidth: 13.3em;
+$resultWidth: 6.2em;
 
 // shared with js: colors of excel-export (:export is css-modules feature)
 /* stylelint-disable selector-pseudo-class-no-unknown, property-no-unknown */
@@ -8,6 +11,7 @@ $fixed: #f08c00; // valid but was invalid before
   colorValid: $valid;
   colorInvalid: $invalid;
   colorFixed: $fixed;
+  colorPrefilled: $prefilled;
 }
 /* stylelint-enable selector-pseudo-class-no-unknown, property-no-unknown */
 
@@ -20,6 +24,25 @@ $fixed: #f08c00; // valid but was invalid before
     margin-right: auto;
     text-align: left;
   }
+
+  .level {
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .buttonRefresh {
+    background: $fixed; // warning: current results are replaced
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+
+  .buttonNextLevel {
+    min-width: 12em;
+    background: $valid;
+  }
 }
 
 .table {
@@ -31,7 +54,7 @@ $fixed: #f08c00; // valid but was invalid before
 
 .row {
   display: grid;
-  grid-template-columns: 13.3em 1fr 1fr 7em 6.2em; // answer: `x = -12.345`
+  grid-template-columns: $taskWidth 1fr 1fr 7em $resultWidth; // answer: `x = -12.345`
   align-items: center;
   gap: 0.4em;
   padding: 0 0.3em;
@@ -64,6 +87,10 @@ $fixed: #f08c00; // valid but was invalid before
     --ctrl-focus-border: #{$fixed};
     box-shadow: 0 0 0 2px var(--ctrl-border);
   }
+
+  [data-prefilled] > wup-text {
+    --ctrl-text: #{$prefilled};
+  }
 }
 
 .header,
@@ -72,13 +99,10 @@ $fixed: #f08c00; // valid but was invalid before
 }
 
 .summary {
+  grid-template-columns: $taskWidth 1fr $resultWidth; // it doesn't depend on count of visible inputs
   padding-top: 0.6em;
   padding-bottom: 0.6em;
   border-top: 1px solid $borderColor;
-
-  .spent {
-    grid-column: 2 / 5;
-  }
 
   .valid {
     color: $valid;
@@ -98,18 +122,17 @@ $fixed: #f08c00; // valid but was invalid before
 }
 
 .result {
-  line-height: 1.2; // it's wrapped into 2 lines: `ошибки: 2,` + `21;4;3 сек`
+  line-height: 1.2; // it's wrapped into 2 lines: `грешки: 2,` + `21;4;3 сек`
 }
 
-// time & mistakes are visible only for admin (but they are included into excel)
+// time & mistakes per row are visible only for admin (but they are included into excel); summary is visible for everyone
 .table:not([data-admin]) {
-  .row {
-    grid-template-columns: 13.3em 1fr 1fr 7em;
+  .row:not(.summary) {
+    grid-template-columns: $taskWidth 1fr 1fr 7em;
   }
 
   .result,
-  .header > :last-child,
-  .summary {
+  .header > :last-child {
     display: none;
   }
 }

@@ -3,7 +3,7 @@ import observer from "web-ui-pack/helpers/observer";
 
 /** Current user of the system; it can be changed in runtime: `myUser.isAdmin = true` OR `window.myUser = { isAdmin: true }` */
 export interface IMyUser {
-  /** Any truthy value means admin: `true`, `1` */
+  /** Any truthy value means admin: `true`, `1`; it's `true` by default for dev-build */
   isAdmin: boolean | number;
 }
 
@@ -18,7 +18,7 @@ const emit = (): void => listeners.forEach((f) => f());
 
 let current: IMyUser;
 function setUser(v: IMyUser | null | undefined): void {
-  current = observer.make<IMyUser>({ isAdmin: false, ...v }); // isAdmin is false by default
+  current = observer.make<IMyUser>({ isAdmin: global.DEV, ...v }); // isAdmin is false by default (except dev-build)
   observer.onChanged(current, emit);
 }
 
