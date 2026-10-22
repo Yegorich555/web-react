@@ -1,5 +1,5 @@
 import exportToExcel, { ExcelFontStyles, IExcelColumnMap, IExcelStyle } from "web-ui-pack/helpers/files/exportToExcel";
-import { Field, fieldTitles, getCorrectValues, RowResult } from "./mathRow";
+import { Field, FieldState, fieldTitles, getCorrectValues, getStateAttr, RowResult } from "./mathRow";
 import { LevelResult, nextFileIndex } from "./storage";
 import { formatDuration, getSummary } from "./summary";
 import * as styles from "./schoolMathTest.m.scss";
@@ -27,20 +27,23 @@ const mapping: IExcelColumnMap<Item>[] = [
 
 // WARN: the same objects for every cell otherwise exportToExcel re-resolves the style per cell
 // colors are the same as in UI (see :export in scss)
-const validStyle: IExcelStyle = { color: styles.colorValid };
-const invalidStyle: IExcelStyle = { color: styles.colorInvalid };
+const stateStyles: Record<FieldState, IExcelStyle> = {
+  valid: { color: styles.colorValid },
+  invalid: { color: styles.colorInvalid },
+  fixed: { color: styles.colorFixed }, // valid but was invalid before
+};
 const prefilledStyle: IExcelStyle = { color: styles.colorPrefilled };
 const summaryStyle: IExcelStyle = { fontStyle: ExcelFontStyles.bold };
 const summaryStyles: Partial<Record<keyof Item, IExcelStyle>> = {
-  unwrap: { ...summaryStyle, ...validStyle },
-  isolate: { ...summaryStyle, ...invalidStyle },
-  mistakes: { ...summaryStyle, color: styles.colorFixed },
+  unwrap: { ...summaryStyle, ...stateStyles.valid },
+  isolate: { ...summaryStyle, ...stateStyles.invalid },
+  mistakes: { ...summaryStyle, ...stateStyles.fixed },
 };
 
 /** Returns rows of excel-sheet: every row of the test + summary row */
 function toSheetData({ level, fields, results: rows }: LevelResult): Item[] {
-  const value = (r: RowResult, f: Field, prefix = ""): string => {
-    if (!fields.includes(f)) {
+  const value = (r: RowResult, rowFields: Field[], f: Field, prefix = ""): string => {
+    if (!rowFields.includes(f)) {
       return getCorrectValues(r.task)[f]; // prefilled since column is learned
     }
     const v = r.values[f];
@@ -49,9 +52,9 @@ function toSheetData({ level, fields, results: rows }: LevelResult): Item[] {
   const data = rows.map<Item>((r, i) => ({
     num: i + 1,
     task: r.task.text,
-    unwrap: value(r, "unwrap"),
-    isolate: value(r, "isolate"),
-    answer: value(r, "answer", "x = "), // prefix `x = ` isn't part of input value
+    unwrap: value(r, fields[i], "unwrap"),
+    isolate: value(r, fields[i], "isolate"),
+    answer: value(r, fields[i], "answer", "x = "), // prefix `x = ` isn't part of input value
     isDone: r.times ? "да" : "не",
     mistakes: r.mistakes,
     times: r.times?.join(";") ?? "",
@@ -80,13 +83,15 @@ export default async function exportResults(levels: LevelResult[]): Promise<Blob
     if (rowIndex === sheets[sheetIndex].data.length) {
       return { style: summaryStyles[m.propName] ?? summaryStyle };
     }
-    if (rowIndex && m.propName in fieldTitles && !fields.includes(m.propName as Field)) {
+    if (rowIndex && m.propName in fieldTitles && !fields[rowIndex - 1].includes(m.propName as Field)) {
       return { style: prefilledStyle };
     }
-    const state = rowIndex ? rows[rowIndex - 1].states[m.propName as Field] : undefined; // rowIndex 0 is header
-    if (state == null) {
-      return undefined;
+    if (!rowIndex || !(m.propName in fieldTitles)) {
+      return undefined; // rowIndex 0 is header
     }
-    return { style: state ? validStyle : invalidStyle };
+    const r = rows[rowIndex - 1];
+    const f = m.propName as Field;
+    const state = getStateAttr(r.states[f], r.hadMistakes[f]); // the same colors as in UI
+    return state ? { style: stateStyles[state] } : undefined;
   });
 }

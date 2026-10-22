@@ -41,8 +41,10 @@ export function check(task: MathTask, field: Field, text: string): boolean | und
   return text ? validators[field](task, text) : undefined;
 }
 
-/** Returns value of attribute [data-state] used for styling */
-function getStateAttr(isValid: boolean | undefined, hadMistake: boolean | undefined): string | undefined {
+export type FieldState = "valid" | "invalid" | "fixed";
+
+/** Returns value of attribute [data-state] used for styling (UI & excel-export) */
+export function getStateAttr(isValid: boolean | undefined, hadMistake: boolean | undefined): FieldState | undefined {
   if (isValid == null) {
     return undefined;
   }
@@ -192,7 +194,7 @@ function MathRow({ task, fields, isExample, initial, onChange, isAdmin }: Props)
     <div className={styles.row} data-done={isDone || undefined}>
       <div className={styles.task}>{task.text}</div>
       {allFields.map((f) => {
-        const isPrefilled = !isExample && !fields.includes(f); // column is already learned
+        const isPrefilled = !isExample && !fields.includes(f); // column is already learned (except several rows to practice)
         return (
           // events are bubbled from <input/> inside wup-text so div isn't interactive itself
           // eslint-disable-next-line jsx-a11y/no-static-element-interactions

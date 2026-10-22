@@ -26,10 +26,14 @@ export const emptyResult = (task: MathTask): RowResult => ({
   spent: {},
 });
 
-/** Returns text of time: `34 мин 20 сек` */
+/** Returns text of time: `20 сек`, `34 мин 20 сек`, `1 ч 23 мин 5 сек` */
 export function formatDuration(ms: number): string {
   const sec = Math.round(ms / 1000);
   const min = Math.floor(sec / 60);
+  const hours = Math.floor(min / 60);
+  if (hours) {
+    return `${hours} ч ${min % 60} мин ${sec % 60} сек`;
+  }
   return min ? `${min} мин ${sec % 60} сек` : `${sec} сек`;
 }
 

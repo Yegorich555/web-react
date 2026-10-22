@@ -4,8 +4,8 @@ import type { Field, RowResult } from "./mathRow";
 /** Results of the test of pointed level */
 export interface LevelResult {
   level: number;
-  /** Editable columns */
-  fields: Field[];
+  /** Editable inputs per row */
+  fields: Field[][];
   results: RowResult[];
 }
 
@@ -23,7 +23,7 @@ const storeName = "state";
 const stateKey = "current";
 const fileIndexKey = "fileIndex";
 /** Increment it when SavedState is changed so the old data is ignored */
-const version = 4;
+const version = 5;
 /** Wait for pointed time before saving to avoid writing on each keystroke */
 const saveDebounceMs = 300;
 /** indexedDB.open() can hang forever in some browsers/webviews: fail after timeout so the app is rendered anyway */

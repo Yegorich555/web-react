@@ -60,11 +60,19 @@ function solve(task: string): Record<Field, string> & { x: number } {
   return { unwrap, isolate: `x = ${formatTerms(nums)}`, answer: String(x), x };
 }
 
+/** Returns editable inputs of row: learned columns are prefilled */
+async function editableFields(r: Locator): Promise<Field[]> {
+  const prefilled = await Promise.all(allFields.map((f) => cell(r, f).getAttribute("data-prefilled")));
+  return allFields.filter((_, k) => prefilled[k] == null);
+}
+
 /** Type correct values into editable inputs of row
+ * @param only inputs to fill: all editable by default
  * @param mistakeIn inputs where wrong value is typed before correct one */
-async function solveRow(page: Page, i: number, fields = allFields, mistakeIn: Field[] = []): Promise<void> {
+async function solveRow(page: Page, i: number, only?: Field[], mistakeIn: Field[] = []): Promise<void> {
   const r = row(page, i);
   const correct = solve(await taskText(r));
+  const fields = only ?? (await editableFields(r));
   for (let k = 0; k < fields.length; ++k) {
     const f = fields[k];
     if (mistakeIn.includes(f)) {
@@ -292,7 +300,7 @@ test("buttons Test & Refresh are visible only for admin", async ({ page }) => {
   await expect(refreshBtn).toBeVisible();
 });
 
-test("button 'Нов тест' is enabled only for admin or when all rows are completed", async ({ page }) => {
+test("button 'Нов тест' is enabled only when all rows are completed without errors (for admin too)", async ({ page }) => {
   test.setTimeout(60_000);
   const btn = nextBtn(page);
   await expect(btn).toBeDisabled();
@@ -300,17 +308,26 @@ test("button 'Нов тест' is enabled only for admin or when all rows are co
   await expect(page.locator("wup-popup")).toHaveText("Достъпно само когато всичко е вярно"); // tooltip for disabled button
   await page.mouse.move(0, 0);
   await setAdmin(page, true);
-  await expect(btn).toBeEnabled();
-  await setAdmin(page, false);
   await expect(btn).toBeDisabled();
+  await setAdmin(page, false);
 
-  for (let i = 1; i <= ROWS; ++i) {
+  for (let i = 1; i < ROWS; ++i) {
     // eslint-disable-next-line no-await-in-loop
-    await solveRow(page, i);
+    await solveRow(page, i, allFields, i === 1 ? ["unwrap"] : []); // 1 mistake otherwise perfect result finishes the round
     // eslint-disable-next-line no-await-in-loop
-    await expect(btn).toBeEnabled({ enabled: i === ROWS });
+    await expect(btn).toBeDisabled();
   }
-  await expect(btn).toHaveAttribute("w-tooltip", "Преминаване към ниво 2"); // everything is correct => every input is editable
+  // every input is filled but the last one is invalid
+  const last = row(page, ROWS);
+  const correct = solve(await taskText(last));
+  await typeAndLeave(input(last, "unwrap"), correct.unwrap);
+  await typeAndLeave(input(last, "isolate"), correct.isolate);
+  await typeAndLeave(input(last, "answer"), String(correct.x + 1));
+  await expect(cell(last, "answer")).toHaveAttribute("data-state", "invalid");
+  await expect(btn).toBeDisabled();
+  await typeAndLeave(input(last, "answer"), correct.answer);
+  await expect(btn).toBeEnabled();
+  await expect(btn).toHaveAttribute("w-tooltip", "Преминаване към ниво 2"); // every column is learned => every input is editable
 
   const isDownloaded = trackDownloads(page);
   await btn.click();
@@ -360,10 +377,49 @@ test("learned columns are prefilled & readonly at the next level", async ({ page
   await expect(r.locator("[data-result]")).toHaveText(/^грешки: 0, \d+ сек$/); // time only for editable input
 });
 
+test("learned column keeps editable inputs as many as rows with mistakes", async ({ page }) => {
+  test.setTimeout(60_000);
+  for (let i = 1; i <= ROWS; ++i) {
+    // eslint-disable-next-line no-await-in-loop
+    await solveRow(page, i, allFields, i === ROWS ? ["unwrap", "isolate"] : ["unwrap"]); // `isolate` is learned with 1 mistake
+  }
+  await nextBtn(page).click();
+  await expect(levelLabel(page)).toHaveText("Ниво 2 от 5");
+
+  await expect(page.locator("[data-prefilled]")).toHaveCount(ROWS * 2 - 1);
+  await expect(page.locator('[data-field="answer"][data-prefilled]')).toHaveCount(ROWS);
+  await expect(page.locator('[data-field="unwrap"][data-prefilled]')).toHaveCount(0);
+  const editable = page.locator('[data-field="isolate"]:not([data-prefilled])');
+  await expect(editable).toHaveCount(2); // example row + 1 random row
+  await expect(editable.nth(1).locator("input")).toHaveValue("");
+  await expect(editable.nth(1).locator("input")).toBeEditable();
+
+  // row with retried input is completed only when it's valid too
+  const isEditable = await page.locator('[data-field="isolate"]').evaluateAll((els) => els.map((el) => !el.hasAttribute("data-prefilled")));
+  const i = isEditable.indexOf(true, 1); // skip example row
+  await solveRow(page, i, ["unwrap", "isolate"]);
+  await expect(row(page, i).locator("[data-result]")).toHaveText(/^грешки: 0, \d+;\d+ сек$/);
+
+  // reload keeps the same editable inputs
+  await page.waitForTimeout(600); // debounce of saving
+  await page.reload();
+  await expect(page.locator("[data-prefilled]")).toHaveCount(ROWS * 2 - 1);
+  await expect(cell(row(page, i), "isolate")).not.toHaveAttribute("data-prefilled");
+});
+
 test("saves all levels into excel when the last level is finished", async ({ page }) => {
   const isDownloaded = trackDownloads(page);
-  await setAdmin(page, true); // admin can go to the next level at any time
+  await setAdmin(page, true);
+  const testBtn = page.getByRole("button", { name: "Test", exact: true });
+  /** Returns count of rows solved without mistakes from summary */
+  const getWithoutMistakes = async (): Promise<number> =>
+    Number((await page.locator("[data-summary] > div").nth(2).innerText()).split(" / ")[0]);
+  let withoutMistakes = 0;
   for (let level = 2; level <= 5; ++level) {
+    // eslint-disable-next-line no-await-in-loop
+    await testBtn.click(); // fill all rows with at least 1 mistake => the next level
+    // eslint-disable-next-line no-await-in-loop
+    withoutMistakes += await getWithoutMistakes();
     // eslint-disable-next-line no-await-in-loop
     await nextBtn(page).click();
     // eslint-disable-next-line no-await-in-loop
@@ -371,7 +427,6 @@ test("saves all levels into excel when the last level is finished", async ({ pag
   }
   expect(isDownloaded()).toBe(false);
 
-  const testBtn = page.getByRole("button", { name: "Test", exact: true });
   const [download] = await Promise.all([page.waitForEvent("download"), testBtn.click()]); // fill all rows => the last level is finished
   expect(download.suggestedFilename()).toBe("mathTest_1.xlsx");
   const text = readZipText(readFileSync((await download.path())!));
@@ -382,24 +437,75 @@ test("saves all levels into excel when the last level is finished", async ({ pag
   expect(text).toContain(`${ROWS} от ${ROWS}`);
   await expect(page.locator("[data-done]")).toHaveCount(ROWS);
 
-  // it isn't saved again after page reload or filling again
+  // congratulations: score is % of rows without mistakes of all levels
+  const modal = page.locator("wup-modal");
+  await expect(modal).toBeVisible();
+  await expect(modal.getByRole("heading")).toHaveText("Поздравления!");
+  await expect(modal.locator("[data-spent]")).toHaveText(/^(\d+ ч )?(\d+ мин )?\d+ сек$/);
+  withoutMistakes += await getWithoutMistakes();
+  await expect(modal.locator("[data-score]")).toHaveText(`${Math.round((withoutMistakes * 100) / (ROWS * 5))} / 100`);
+
+  // page is reloaded before closing congratulations: it isn't saved again & finished test is kept
   let downloads = 0;
   page.on("download", () => ++downloads);
-  await testBtn.click();
   await page.waitForTimeout(600); // debounce of saving
   await page.reload();
   await expect(levelLabel(page)).toHaveText("Ниво 5 от 5");
   await expect(page.locator("[data-done]")).toHaveCount(ROWS);
   await page.waitForTimeout(500);
   expect(downloads).toBe(0);
+  await expect(page.locator("wup-modal")).toHaveCount(0); // congratulations are shown only once
 
-  // the next test starts new round
+  // so the next test starts new round via button
   await expect(nextBtn(page)).toHaveAttribute("w-tooltip", "Нов кръг от ниво 1");
   await nextBtn(page).click();
   await expect(levelLabel(page)).toHaveText("Ниво 1 от 5");
   await expect(page.locator("[data-done]")).toHaveCount(0);
   await page.waitForTimeout(500);
   expect(downloads).toBe(0);
+});
+
+test("perfect result finishes the round instead of the next level", async ({ page }) => {
+  test.setTimeout(60_000);
+  await setAdmin(page, true);
+  await page.getByRole("button", { name: "Test", exact: true }).click(); // fill all rows with at least 1 mistake => the next level
+  const level1 = Number((await page.locator("[data-summary] > div").nth(2).innerText()).split(" / ")[0]); // rows without mistakes
+  await nextBtn(page).click();
+  await expect(levelLabel(page)).toHaveText("Ниво 2 от 5");
+  await setAdmin(page, false);
+
+  for (let i = 1; i < ROWS; ++i) {
+    // eslint-disable-next-line no-await-in-loop
+    await solveRow(page, i);
+  }
+  const [download] = await Promise.all([page.waitForEvent("download"), solveRow(page, ROWS)]);
+  const text = readZipText(readFileSync((await download.path())!));
+  expect(text).toContain("Ниво 1"); // previous level is saved too
+  expect(text).toContain("Общо, ниво 2");
+  expect(text).not.toContain("Ниво 3");
+
+  const modal = page.locator("wup-modal");
+  await expect(modal.getByRole("heading")).toHaveText("Поздравления!");
+  await expect(modal).toContainText("Решихте ниво 2 без нито една грешка");
+  await expect(modal.locator("[data-score]")).toHaveText(`${Math.round(((level1 + ROWS) * 100) / (ROWS * 2))} / 100`); // both levels
+
+  // closing congratulations starts new round
+  let downloads = 0;
+  page.on("download", () => ++downloads);
+  await modal.getByRole("button", { name: "Добре" }).click();
+  await expect(modal).toHaveCount(0);
+  await expect(levelLabel(page)).toHaveText("Ниво 1 от 5");
+  await expect(page.locator("[data-done]")).toHaveCount(0);
+  await expect(page.locator("[data-prefilled]")).toHaveCount(0);
+  await expect(nextBtn(page)).toBeDisabled();
+  await page.waitForTimeout(600); // debounce of saving
+  expect(downloads).toBe(0); // the round is already saved
+
+  // new round is kept after page reload
+  await page.reload();
+  await expect(levelLabel(page)).toHaveText("Ниво 1 от 5");
+  await expect(page.locator("[data-done]")).toHaveCount(0);
+  await expect(page.locator("wup-modal")).toHaveCount(0);
 });
 
 test("button Test fills all rows with simulated mistakes on every click", async ({ page }) => {
@@ -565,6 +671,11 @@ test("counts time of focused input when page is closed", async ({ page }) => {
   await page.clock.fastForward(65_000);
   await page.reload();
   await expect(page.locator("[data-summary] > div").nth(1)).toHaveText(/^Време: 1 мин \d+ сек$/);
+
+  await input(row(page, 1), "unwrap").click();
+  await page.clock.fastForward(3_600_000);
+  await input(row(page, 1), "unwrap").press("Tab");
+  await expect(page.locator("[data-summary] > div").nth(1)).toHaveText(/^Време: 1 ч 1 мин \d+ сек$/);
 });
 
 test("spaces can't split numbers", async ({ page }) => {

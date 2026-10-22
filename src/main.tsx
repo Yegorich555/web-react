@@ -10,6 +10,7 @@ import { WUPPopupElement } from "web-ui-pack";
 import ErrorBoundary from "./elements/errorBoundary";
 import SchoolMathTest from "./components/schoolMathTest";
 import { loadState } from "./components/schoolMathTest/storage";
+import * as styles from "./components/schoolMathTest/schoolMathTest.m.scss";
 
 // UI_VERSION is injected by webpack.DefinePlugin (index.html isn't template anymore)
 (window as unknown as { app_uiVersion?: string }).app_uiVersion = process.env.UI_VERSION;
@@ -21,7 +22,7 @@ WUPPopupElement.$useTooltip(); // show tooltip for every element with attr [w-to
 loadState().then((saved) =>
   ReactDOM.createRoot(document.getElementById("app")!).render(
     <ErrorBoundary>
-      <main>
+      <main className={styles.page}>
         <SchoolMathTest saved={saved} />
       </main>
     </ErrorBoundary>,

@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useIsAdmin } from "@/helpers/myUser";
 import { EXAMPLE_TASK } from "./equation";
 import exportResults from "./exportResults";
+import FinishModal from "./finishModal";
 import MathRow, { allFields, fieldTitles, RowResult, withFocusedSpent } from "./mathRow";
 import { clearState, LevelResult, SavedState, saveState } from "./storage";
-import { emptyResult, formatDuration, getSummary } from "./summary";
+import { emptyResult, formatDuration, getSummary, Summary } from "./summary";
 import simulateResults from "./simulate";
 import {
   generateTest,
+  isPerfect,
   levelPlan,
   MAX_LEVEL,
   planNextTest,
@@ -43,15 +45,19 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
   const [restored] = useState(isSaved ? results : null);
   /** Results of previous levels of the current round */
   const [history, setHistory] = useState<LevelResult[]>(() => (isSaved ? saved.history : []));
-  /** All levels of the current round are exported (it happens when the last level is finished) */
+  /** All levels of the current round are exported (it happens when the round is finished) */
   const [isExported, setIsExported] = useState(isSaved && saved.isExported);
   const [isExporting, setIsExporting] = useState(false);
+  /** Summary of all levels & the last one: it's defined when the round is finished to show congratulations */
+  const [finished, setFinished] = useState<{ sum: Summary; level: number } | null>(null);
   const sum = getSummary(results);
   const isAdmin = useIsAdmin();
   const isEnded = sum.done === ROWS_COUNT;
-  // admin can start the next test at any time; user only when all rows are completed (so everything is valid)
-  const canNext = (isAdmin || isEnded) && !isExporting;
-  const nextPlan = isAdmin || isEnded ? planNextTest(test, results) : null;
+  /** The last level is finished or every row is solved without mistakes (it doesn't make sense to level up) */
+  const isRoundEnded = isEnded && (test.level === MAX_LEVEL || isPerfect(results));
+  // only when all rows are completed: completed row has every editable input valid so there are no errors
+  const canNext = isEnded && !isExporting;
+  const nextPlan = isEnded ? planNextTest(test, results) : null;
 
   /** Stable callbacks per row otherwise MathRow fires onChange on each render */
   const onRowChange = useMemo(
@@ -88,14 +94,15 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
     }
   };
 
-  // the last level is finished: save all levels of the round at once
+  // the round is finished: save all levels of the round at once
   useEffect(() => {
-    if (isEnded && test.level === MAX_LEVEL && !isExported) {
+    if (isRoundEnded && !isExported) {
       setIsExported(true); // before export otherwise it's repeated on each render if export fails
+      setFinished({ sum: getSummary([...history.flatMap((h) => h.results), ...results]), level: test.level });
       setIsExporting(true);
       exportResults([...history, { level: test.level, fields: test.fields, results }]).finally(() => setIsExporting(false));
     }
-  }, [isEnded, isExported, test, history, results]);
+  }, [isRoundEnded, isExported, test, history, results]);
 
   const start = (plan: TestPlan, nextHistory: LevelResult[]): void => {
     clearState(); // the new test is saved again by effect above
@@ -114,15 +121,17 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
     start(samePlan(test), history);
   };
 
-  /** Next level: results are kept until the last level is finished; the last level => new round */
-  const goNext = async (plan: TestPlan): Promise<void> => {
-    const current: LevelResult = { level: test.level, fields: test.fields, results };
-    if (test.level < MAX_LEVEL) {
-      start(plan, [...history, current]);
-      return;
-    }
-    !isExported && sum.done > 0 && (await save([...history, current])); // admin can skip the last level before it's finished
-    start(plan, []);
+  /** Next level: results are kept until the round is finished; the last level or perfect result => new round
+   * (usually it's started on closing congratulations but they aren't shown again after page reload) */
+  const goNext = (plan: TestPlan): void => {
+    // new round: the previous one is already saved since the next test is available only when it's finished
+    start(plan, plan.level > test.level ? [...history, { level: test.level, fields: test.fields, results }] : []);
+  };
+
+  /** Congratulations are closed: new round from the 1st level (the finished one is already saved) */
+  const closeFinished = (): void => {
+    setFinished(null);
+    start(levelPlan(1), []);
   };
 
   /** Admin-only: fill all inputs with simulated mistakes to test the app without typing; every click overrides previous results */
@@ -159,12 +168,12 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
           ))}
           <div>Време и грешки</div>
         </div>
-        <MathRow task={EXAMPLE_TASK} fields={test.fields} isExample />
+        <MathRow task={EXAMPLE_TASK} fields={allFields} isExample />
         {test.tasks.map((t, i) => (
           <MathRow
             key={`${test.id}_${t.text}`} // texts are unique per test
             task={t}
-            fields={test.fields}
+            fields={test.fields[i]}
             initial={initials[i]}
             onChange={onRowChange[i]}
             isAdmin={isAdmin}
@@ -199,6 +208,7 @@ export default function SchoolMathTest({ saved }: Props): React.JSX.Element {
           Нов тест
         </button>
       </div>
+      {finished ? <FinishModal sum={finished.sum} level={finished.level} onClose={closeFinished} /> : null}
     </>
   );
 }
