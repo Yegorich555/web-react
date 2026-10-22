@@ -1,5 +1,6 @@
 npx lint-staged
-npm test
+# playwright tests (npm test) are too slow for every commit: run them manually
+npm run lint
 
 # uncomment for testing git-hooks
 # exit 0
